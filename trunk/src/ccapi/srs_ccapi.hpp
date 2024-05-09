@@ -1,10 +1,14 @@
 #pragma once
 
 #include "srs_ccapi_innerutil.hpp"
+#include <string>
+#include <sstream>
 #include <memory>
 #include <deque>
+#include <thread>
 #include <stdlib.h>
 #include <unistd.h>
+#include <sys/eventfd.h>
 #include <sys/ipc.h>
 #include <sys/shm.h>
 
@@ -175,6 +179,7 @@ inline void shm_detach() {
     if(shmptr != nullptr) {
         shmdt((const void*)shmptr);
     }
+    g_srs_ccapi_shmptr = nullptr;
 }
 
 inline void shm_remove() {
@@ -182,6 +187,19 @@ inline void shm_remove() {
     if(shmid > 0) {
         shmctl(shmid, IPC_RMID, nullptr);
     }
+    g_srs_ccapi_shmptr = nullptr;
+    g_srs_ccapi_shmid = 0;
+}
+
+//----------------------------------------------------------------------------------
+//@打开or关闭eventfd文件描述符
+inline int open_eventfd() {
+    int fd = eventfd(0, EFD_NONBLOCK | EFD_CLOEXEC);
+    return fd;
+}
+
+inline void close_eventfd(int fd) {
+    close(fd);
 }
 
 };
