@@ -115,13 +115,14 @@ private:
         srs_error_t err = srs_success;
         for(;;) {
             long one = 0;
+            errno = 0;
             int nret = st_read((st_netfd_t)m_worker->m_ev_netfd_srs_read, &one, sizeof(one), 100*1000);
             if(nret == 0) {
-                srs_error("Error srsccapiimpl, handler cid(%s) st_read close with nret 0, exit", m_cid.c_str());
+                srs_error("Error srsccapiimpl, handler cid(%s) st_read close with nret 0, err:%d %s, exit", m_cid.c_str(), errno, strerror(errno));
                 exit(1);
             }else if(nret < 0) {
                 if(!(errno == EAGAIN || errno == EINTR)) {
-                    srs_error("Error srsccapiimpl, handler cid(%s) st_read error(nret:%d err:%d)", m_cid.c_str(), nret, errno);
+                    srs_error("Error srsccapiimpl, handler cid(%s) st_read error(nret:%d err:%d %s), exit", m_cid.c_str(), nret, errno, strerror(errno));
                     exit(1);
                 }
             }
@@ -156,13 +157,14 @@ private:
             }
             if(shmptr && shmptr->msgCount(true) > 0) {
                 long one = 1;
+                errno = 0;
                 int wret = st_write((st_netfd_t)m_worker->m_ev_netfd_srs_write, &one, sizeof(one), 100*1000);
                 if(wret == 0) {
-                    srs_error("Error srsccapiimpl, handler cid(%s) st_write close with wret 0, exit", m_cid.c_str());
+                    srs_error("Error srsccapiimpl, handler cid(%s) st_write close with wret 0, err:%d %s, exit", m_cid.c_str(), errno, strerror(errno));
                     exit(1);
                 }else if(wret < 0) {
                     if(!(errno == EAGAIN || errno == EINTR)) {
-                        srs_error("Error srsccapiimpl, handler cid(%s) st_write error(wret:%d err:%d)", m_cid.c_str(), wret, errno);
+                        srs_error("Error srsccapiimpl, handler cid(%s) st_write error(wret:%d err:%d %s), exit", m_cid.c_str(), wret, errno, strerror(errno));
                         exit(1);
                     }
                 }

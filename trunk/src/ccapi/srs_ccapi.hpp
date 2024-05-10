@@ -6,8 +6,10 @@
 #include <memory>
 #include <deque>
 #include <thread>
+#include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <error.h>
 #include <sys/eventfd.h>
 #include <sys/ipc.h>
 #include <sys/shm.h>
