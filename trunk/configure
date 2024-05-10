@@ -367,7 +367,7 @@ APP_OBJS="${MODULE_OBJS[@]}"
 #
 #Server Module, for SRS only.
 MODULE_ID="SERVER"
-MODULE_DEPENDS=("CORE" "KERNEL" "PROTOCOL" "APP")
+MODULE_DEPENDS=("CORE" "KERNEL" "PROTOCOL" "APP" "CCAPI")
 ModuleLibIncs=(${SRS_OBJS} ${LibGperfRoot} ${LibSSLRoot})
 if [[ $SRS_RTC == YES ]]; then
     ModuleLibIncs+=(${LibSrtpRoot})

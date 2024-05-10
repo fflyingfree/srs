@@ -54,6 +54,8 @@ using namespace std;
 #include <srs_app_srt_server.hpp>
 #endif
 
+#include "srs_app_zz_ccapi_impl.hpp"
+
 // pre-declare
 srs_error_t run_directly_or_daemon();
 srs_error_t run_in_thread_pool();
@@ -88,11 +90,46 @@ extern void srs_free_global_system_ips();
 extern void asan_report_callback(const char* str);
 #endif
 
+//----------------------------------------------------------------------------------
+bool _ccapi_on = false;
+int _ccapi_evfd_srs_read = -1;
+int _ccapi_evfd_srs_write = -1;
+int _ccapi_shmid = -1;
+
+//----------------------------------------------------------------------------------
+bool srs_ccapi_impl_preParseCmdParams(int argc, char** argv)
+{
+    bool bret = false;
+    if(argc > 3 && std::string(argv[argc-2]) == "-z")  {
+        std::string ccapiParams = std::string(argv[argc-1]);
+        printf("srs_ccapi_impl_preParseCmdParams, ccapiParams:%s\r\n", ccapiParams.c_str());
+        fflush(stdout);
+        int rc = sscanf(ccapiParams.c_str(), "r=%d#w=%d#s=%d", &_ccapi_evfd_srs_read, &_ccapi_evfd_srs_write, &_ccapi_shmid);
+        if(rc == 3) {
+            printf("srs_ccapi_impl_preParseCmdParams okay, evfd_srs_read:%d evfd_srs_write:%d shmid:%d\r\n",
+                _ccapi_evfd_srs_read, _ccapi_evfd_srs_write, _ccapi_shmid);
+            fflush(stdout);
+            _ccapi_on = true;
+            bret = true;
+        }else{
+            printf("srs_ccapi_impl_preParseCmdParams error, exit\r\n");
+            fflush(stdout);
+            exit(1);
+        }
+    }
+    return bret;
+}
+
 /**
  * main entrance.
  */
 srs_error_t do_main(int argc, char** argv, char** envp)
 {
+    //add for ccapi
+    if(srs_ccapi_impl_preParseCmdParams(argc, argv)) {
+        argc -= 2;
+    }
+
     srs_error_t err = srs_success;
 
     // TODO: Might fail if change working directory.
@@ -464,6 +501,15 @@ srs_error_t run_in_thread_pool()
     srs_trace("Run in single thread mode");
     return run_hybrid_server(NULL);
 #else
+
+    if(_ccapi_on) {
+        if(!gSrsCcApiImplWorker.dostart(_ccapi_evfd_srs_read, _ccapi_evfd_srs_write, _ccapi_shmid)) {
+            exit(1);
+        }
+        srs_trace("Run in single thread mode");
+        return run_hybrid_server(NULL);
+    }
+
     srs_error_t err = srs_success;
 
     // Initialize the thread pool.

@@ -224,8 +224,12 @@ srs_error_t SrsHybridServer::run()
         }
     }
 
+    srs_trace("Notice srs_hybrid_server running..");
+
     // Wait for all server to quit.
     wg.wait();
+
+    srs_trace("Notice srs_hybrid_server quit..");
 
     return err;
 }
