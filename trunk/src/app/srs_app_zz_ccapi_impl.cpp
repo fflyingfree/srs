@@ -102,6 +102,7 @@ public:
 
 public:
     virtual srs_error_t cycle() {
+        return 0;
         if(m_is_read) {
             return do_cycle_on_read_trd();
         }else{
