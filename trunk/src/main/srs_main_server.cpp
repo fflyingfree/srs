@@ -114,8 +114,9 @@ bool srs_ccapi_impl_preParseCmdParams(int argc, char** argv)
 
             long one = 0;
             errno = 0;
-            int nr = read(_ccapi_evfd_srs_read, &one, sizeof(one));
-            printf("========execchild process, read, fd:%d, nr:%d err:%d %s\r\n", _ccapi_evfd_srs_read, nr, errno, strerror(errno));
+            int fd = dup(_ccapi_evfd_srs_read);
+            int nr = read(fd, &one, sizeof(one));
+            printf("========execchild process, read, fd:%d->%d, nr:%d err:%d %s\r\n", _ccapi_evfd_srs_read, fd, nr, errno, strerror(errno));
             fflush(stdout);
 
         }else{
