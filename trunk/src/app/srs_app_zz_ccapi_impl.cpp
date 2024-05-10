@@ -117,7 +117,7 @@ private:
         for(;;) {
             long one = 0;
             errno = 0;
-            int nret = read(4/*(st_netfd_t)m_worker->m_ev_netfd_srs_read*/, &one, sizeof(one), 100*1000);
+            int nret = read(4/*(st_netfd_t)m_worker->m_ev_netfd_srs_read*/, &one, sizeof(one)/*, 100*1000*/);
             srs_error("xxxxxxxxxxx Error srsccapiimpl, handler cid(%s) st_read error(nret:%d err:%d %s), exit", m_cid.c_str(), nret, errno, strerror(errno));
             if(nret == 0) {
                 srs_error("Error srsccapiimpl, handler cid(%s) st_read close with nret 0, err:%d %s, exit", m_cid.c_str(), errno, strerror(errno));
