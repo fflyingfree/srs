@@ -104,7 +104,6 @@ public:
 public:
     virtual srs_error_t cycle() {
         if(m_is_read) {
-            return 0;
             return do_cycle_on_read_trd();
         }else{
             return do_cycle_on_write_trd();
@@ -119,6 +118,7 @@ private:
             long one = 0;
             errno = 0;
             int nret = st_read((st_netfd_t)m_worker->m_ev_netfd_srs_read, &one, sizeof(one), 100*1000);
+            srs_error("xxxxxxxxxxx Error srsccapiimpl, handler cid(%s) st_read error(nret:%d err:%d %s), exit", m_cid.c_str(), nret, errno, strerror(errno));
             if(nret == 0) {
                 srs_error("Error srsccapiimpl, handler cid(%s) st_read close with nret 0, err:%d %s, exit", m_cid.c_str(), errno, strerror(errno));
                 exit(1);
