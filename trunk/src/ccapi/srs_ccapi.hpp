@@ -164,7 +164,7 @@ inline SrsCcApiSharedMemory* shm_get() {
         return shmptr;
     }
     int shmid = g_srs_ccapi_shmid.load();
-    if(shmid > 0) {
+    if(shmid >= 0) {
         shmptr = static_cast<SrsCcApiSharedMemory*>(shmat(shmid, nullptr, 0));
         if(shmptr && shmptr != reinterpret_cast<SrsCcApiSharedMemory*>(-1)) {
             g_srs_ccapi_shmptr = shmptr;
@@ -184,7 +184,7 @@ inline void shm_detach() {
 
 inline void shm_remove() {
     int shmid = g_srs_ccapi_shmid.load();
-    if(shmid > 0) {
+    if(shmid >= 0) {
         shmctl(shmid, IPC_RMID, nullptr);
     }
     g_srs_ccapi_shmptr = nullptr;

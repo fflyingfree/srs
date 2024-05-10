@@ -204,7 +204,7 @@ bool SrsCcApiImplWorker::ison() {
 
 bool SrsCcApiImplWorker::dostart(int evfd_srs_read, int evfd_srs_write, int shmid) {
     m_switch_on = true;
-    if(evfd_srs_read <= 0 || evfd_srs_write <= 0 || shmid <= 0) {
+    if(evfd_srs_read <= 0 || evfd_srs_write <= 0 || shmid < 0) {
         dostop();
         return false;
     }
