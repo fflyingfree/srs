@@ -48,6 +48,7 @@ public:
         srs_error_t err = srs_success;
         for(;;) {
             srs_trace("Debug srsccapiimpl, timer cid(%s) running, counter:%ld", m_cid.c_str(), m_counter);
+            m_worker->notifyev();
             srs_usleep(1000*1000);
             m_counter++;
         }
