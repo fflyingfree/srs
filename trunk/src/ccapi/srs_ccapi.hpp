@@ -196,7 +196,7 @@ inline void shm_remove() {
 //----------------------------------------------------------------------------------
 //@打开or关闭eventfd文件描述符
 inline int open_eventfd() {
-    int fd = eventfd(0, EFD_NONBLOCK | EFD_CLOEXEC);
+    int fd = eventfd(0, EFD_NONBLOCK /*| EFD_CLOEXEC*/);
     return fd;
 }
 
