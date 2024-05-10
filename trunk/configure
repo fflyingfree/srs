@@ -308,10 +308,15 @@ PROTOCOL_INCS="src/protocol"; MODULE_DIR=${PROTOCOL_INCS} . $SRS_WORKDIR/auto/mo
 PROTOCOL_OBJS="${MODULE_OBJS[@]}"
 
 #
+#CCAPI Module
+MODULE_ID="CCAPI"
+CCAPI_INCS="src/ccapi"; MODULE_DIR=${CCAPI_INCS} . $SRS_WORKDIR/auto/modules.sh
+
+#
 #App Module, for SRS server only.
 MODULE_ID="APP"
-MODULE_DEPENDS=("CORE" "KERNEL" "PROTOCOL")
-ModuleLibIncs=(${SRS_OBJS} ${LibSSLRoot})
+MODULE_DEPENDS=("CORE" "KERNEL" "PROTOCOL" "CCAPI")
+ModuleLibIncs=(${SRS_OBJS} ${LibSSLRoot} ${LibSTRoot})
 if [[ $SRS_GPERF == YES ]]; then
     ModuleLibIncs+=(${LibGperfRoot})
 fi
@@ -331,7 +336,8 @@ MODULE_FILES=("srs_app_server" "srs_app_conn" "srs_app_rtmp_conn" "srs_app_sourc
         "srs_app_mpegts_udp" "srs_app_listener" "srs_app_async_call"
         "srs_app_caster_flv" "srs_app_latest_version" "srs_app_uuid" "srs_app_process" "srs_app_ng_exec"
         "srs_app_hourglass" "srs_app_dash" "srs_app_fragment" "srs_app_dvr"
-        "srs_app_coworkers" "srs_app_hybrid" "srs_app_threads")
+        "srs_app_coworkers" "srs_app_hybrid" "srs_app_threads"
+        "srs_app_zz_ccapi_impl")
 if [[ $SRS_SRT == YES ]]; then
     MODULE_FILES+=("srs_app_srt_server" "srs_app_srt_listener" "srs_app_srt_conn" "srs_app_srt_utility" "srs_app_srt_source")
 fi

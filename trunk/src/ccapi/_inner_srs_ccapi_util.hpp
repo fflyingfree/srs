@@ -2,14 +2,13 @@
 
 #include <atomic>
 
-namespace srs_ccpai
+namespace srs_ccapi
 {
 
 class srs_ccapi_SpinLocker
 {
 public:
-    srs_ccapi_SpinLocker() {
-        _flag = ATOMIC_FLAG_INIT;
+    srs_ccapi_SpinLocker() : _flag(ATOMIC_FLAG_INIT) {
     }
     ~srs_ccapi_SpinLocker() {
     }

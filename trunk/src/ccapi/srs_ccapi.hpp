@@ -1,6 +1,6 @@
 #pragma once
 
-#include "srs_ccapi_innerutil.hpp"
+#include "_inner_srs_ccapi_util.hpp"
 #include <string>
 #include <sstream>
 #include <memory>
@@ -12,7 +12,7 @@
 #include <sys/ipc.h>
 #include <sys/shm.h>
 
-namespace srs_ccpai
+namespace srs_ccapi
 {
 
 //----------------------------------------------------------------------------------
@@ -24,7 +24,7 @@ public:
     virtual ~SrsCcApiMsg() { }
 
 public:
-    template<T>
+    template<typename T>
     static T* fetchSpecificMsg(SrsCcApiMsg* pMsg) {
         return dynamic_cast<T*>(pMsg);
     }
@@ -166,8 +166,8 @@ inline SrsCcApiSharedMemory* shm_get() {
     int shmid = g_srs_ccapi_shmid.load();
     if(shmid > 0) {
         shmptr = static_cast<SrsCcApiSharedMemory*>(shmat(shmid, nullptr, 0));
-        if((int)shmaddr > 0) {
-            g_srs_ccapi_shmptr = shmaddr;
+        if(shmptr && shmptr != reinterpret_cast<SrsCcApiSharedMemory*>(-1)) {
+            g_srs_ccapi_shmptr = shmptr;
             shmptr = g_srs_ccapi_shmptr.load();
         }
     }

@@ -1,30 +1,31 @@
-#include "srs_impl_ccapi_worker.hpp"
-#include "app/srs_app_st.hpp"
-#include "kernel/srs_kernel_log.hpp"
+#include "srs_app_zz_ccapi_impl.hpp"
+#include "srs_app_st.hpp"
+#include "st.h"
+#include "srs_kernel_log.hpp"
 #include <sys/syscall.h>
 
-std::atomic<SrsCcApiSharedMemory*> g_srs_ccapi_shmptr(nullptr);
-std::atomic<int> g_srs_ccapi_shmid(-1);
+std::atomic<SrsCcApiSharedMemory*> srs_ccapi::g_srs_ccapi_shmptr(nullptr);
+std::atomic<int> srs_ccapi::g_srs_ccapi_shmid(-1);
 
-class SrsImplCcApiHandler : public ISrsCoroutineHandler
+class SrsCcApiImplHandler : public ISrsCoroutineHandler
 {
 public:
-    SrsImplCcApiHandler(SrsImplCcApiWorker* pworker, bool isread) {
+    SrsCcApiImplHandler(SrsCcApiImplWorker* pworker, bool isread) {
         m_worker = pworker;
         m_is_read = isread;
         std::ostringstream ssCid;
         if(m_is_read) {
-            ssCid << "SrsImplCcApiWorkerReadHandler#t";
+            ssCid << "SrsCcApiImplWorkerReadHandler#t";
         }else{
-            ssCid << "SrsImplCcApiWorkerWriteHandler#t";
+            ssCid << "SrsCcApiImplWorkerWriteHandler#t";
         }
         ssCid << syscall(__NR_gettid);
         m_cid.set_value(ssCid.str());
         m_trd = nullptr;
-        srs_info("Notice srsimplccapi, handler cid(%s) created", m_cid.c_str());
+        srs_info("Notice srsccapiimpl, handler cid(%s) created", m_cid.c_str());
     }
-    virtual ~SrsImplCcApiHandler() {
-        srs_info("Notice srsimplccapi, handler cid(%s) m_trd(%p) delete", m_cid.c_str(), m_trd);
+    virtual ~SrsCcApiImplHandler() {
+        srs_info("Notice srsccapiimpl, handler cid(%s) m_trd(%p) delete", m_cid.c_str(), m_trd);
         if(m_trd) {
             m_trd->stop();
             srs_freep(m_trd);
@@ -38,10 +39,10 @@ public:
         m_trd = new SrsFastCoroutine(tname, this, m_cid);
         srs_error_t err = srs_success;
         if((err = m_trd->start()) != srs_success) {
-            srs_error("Error srsimplccapi, handler cid(%s) start failed err(%d)", tname.c_str(), err);
+            srs_error("Error srsccapiimpl, handler cid(%s) start failed err(%d)", tname.c_str(), err);
             return false;
         }
-        srs_info("Notice srsimplccapi, handler cid(%s) start finished", tname.c_str());
+        srs_info("Notice srsccapiimpl, handler cid(%s) start finished", tname.c_str());
         return true;
     }
 
@@ -56,23 +57,23 @@ public:
 
 private:
     srs_error_t do_cycle_on_read_trd() {
-        srs_info("Notice srsimplccapi, handler cid(%s) trd start cycle_on_read", m_cid.c_str());
+        srs_info("Notice srsccapiimpl, handler cid(%s) trd start cycle_on_read", m_cid.c_str());
         srs_error_t err = srs_success;
         for(;;) {
             long one = 0;
             int nret = st_read((st_netfd_t)m_worker->m_ev_netfd_srs_read, &one, sizeof(one), 100*1000);
             if(nret == 0) {
-                srs_error("Error srsimplccapi, handler cid(%s) st_read close with nret 0, exit", m_cid.c_str());
+                srs_error("Error srsccapiimpl, handler cid(%s) st_read close with nret 0, exit", m_cid.c_str());
                 exit(1);
             }else if(nret < 0) {
                 if(!(errno == EAGAIN || errno == EINTR)) {
-                    srs_error("Error srsimplccapi, handler cid(%s) st_read error(nret:%d err:%d)", m_cid.c_str(), nret, errno);
+                    srs_error("Error srsccapiimpl, handler cid(%s) st_read error(nret:%d err:%d)", m_cid.c_str(), nret, errno);
                     exit(1);
                 }
             }
             SrsCcApiSharedMemory* shmptr = shm_get();
             if(!shmptr) {
-                srs_error("Error srsimplccapi, handler cid(%s) shmptr nullptr", m_cid.c_str());
+                srs_error("Error srsccapiimpl, handler cid(%s) shmptr nullptr", m_cid.c_str());
             }
             if(shmptr && shmptr->msgCount(false) > 0) {
                 for(int loop = 0; loop < 1000; ++loop) {
@@ -91,23 +92,23 @@ private:
     }
 
     srs_error_t do_cycle_on_write_trd() {
-        srs_info("Notice srsimplccapi, handler cid(%s) trd start cycle_on_write", m_cid.c_str());
+        srs_info("Notice srsccapiimpl, handler cid(%s) trd start cycle_on_write", m_cid.c_str());
         srs_error_t err = srs_success;
         for(;;) {
-            srs_cond_timedwait(100*1000);
+            srs_cond_timedwait(m_worker->m_write_cond, 100*1000);
             SrsCcApiSharedMemory* shmptr = shm_get();
             if(!shmptr) {
-                srs_error("Error srsimplccapi, handler cid(%s) shmptr nullptr", m_cid.c_str());
+                srs_error("Error srsccapiimpl, handler cid(%s) shmptr nullptr", m_cid.c_str());
             }
             if(shmptr && shmptr->msgCount(true) > 0) {
                 long one = 1;
                 int wret = st_write((st_netfd_t)m_worker->m_ev_netfd_srs_write, &one, sizeof(one), 100*1000);
                 if(wret == 0) {
-                    srs_error("Error srsimplccapi, handler cid(%s) st_read close with wret 0, exit", m_cid.c_str());
+                    srs_error("Error srsccapiimpl, handler cid(%s) st_read close with wret 0, exit", m_cid.c_str());
                     exit(1);
                 }else if(wret < 0) {
                     if(!(errno == EAGAIN || errno == EINTR)) {
-                        srs_error("Error srsimplccapi, handler cid(%s) st_read error(wret:%d err:%d)", m_cid.c_str(), wret, errno);
+                        srs_error("Error srsccapiimpl, handler cid(%s) st_read error(wret:%d err:%d)", m_cid.c_str(), wret, errno);
                         exit(1);
                     }
                 }
@@ -118,29 +119,29 @@ private:
 
 private:
     void handler_msg_on_read(std::shared_ptr<SrsCcApiMsg> pmsg) {
-        srs_info("Debug srsimplccapi, handler cid(%s), pmsg:%p", m_cid.c_str(), pmsg.get());
+        srs_info("Debug srsccapiimpl, handler cid(%s), pmsg:%p", m_cid.c_str(), pmsg.get());
     }
 
 
 private:
-    SrsImplCcApiWorker* m_worker;
+    SrsCcApiImplWorker* m_worker;
     bool m_is_read;
     SrsContextId m_cid;
     SrsFastCoroutine* m_trd;
     
 };
 
-SrsImplCcApiWorker::SrsImplCcApiWorker() {
+SrsCcApiImplWorker::SrsCcApiImplWorker() {
     m_ev_netfd_srs_read = nullptr;
     m_ev_netfd_srs_write = nullptr;
     m_write_cond = nullptr;
 }
 
-SrsImplCcApiWorker::~SrsImplCcApiWorker() {
+SrsCcApiImplWorker::~SrsCcApiImplWorker() {
     dostop();
 }
 
-bool SrsImplCcApiWorker::dostart(int evfd_srs_read, int evfd_srs_write, int shmid) {
+bool SrsCcApiImplWorker::dostart(int evfd_srs_read, int evfd_srs_write, int shmid) {
     if(evfd_srs_read <= 0 || evfd_srs_write <= 0 || shmid <= 0) {
         dostop();
         return false;
@@ -159,20 +160,20 @@ bool SrsImplCcApiWorker::dostart(int evfd_srs_read, int evfd_srs_write, int shmi
         dostop();
         return false;
     }
-    m_read_handler = std::make_shared<SrsImplCcApiHandler>(this, true);
+    m_read_handler = std::make_shared<SrsCcApiImplHandler>(this, true);
     m_write_cond = srs_cond_new();
-    m_write_handler = std::make_shared<SrsImplCcApiHandler>(this, false);
+    m_write_handler = std::make_shared<SrsCcApiImplHandler>(this, false);
     if(!m_read_handler->start_handler() || !m_write_handler->start_handler()) {
         dostop();
         return false;
     }
-    srs_info("Notice srsimplccapi, worker started with params(ev_fd:(r:%d w:%d) shmid:%d) on status(%s)..",
+    srs_info("Notice srsccapiimpl, worker started with params(ev_fd:(r:%d w:%d) shmid:%d) on status(%s)..",
         evfd_srs_read, evfd_srs_write, shmid, status_info().c_str());
     return true;
 }
 
-void SrsImplCcApiWorker::dostop() {
-    srs_info("Notice srsimplccapi, worker stopping on status(%s)..", status_info().c_str());
+void SrsCcApiImplWorker::dostop() {
+    srs_info("Notice srsccapiimpl, worker stopping on status(%s)..", status_info().c_str());
     shm_detach();
     g_srs_ccapi_shmptr = nullptr;
     g_srs_ccapi_shmid = -1;
@@ -192,16 +193,15 @@ void SrsImplCcApiWorker::dostop() {
     }
 }
 
-void SrsImplCcApiWorker::notifyev() {
+void SrsCcApiImplWorker::notifyev() {
     srs_cond_signal(m_write_cond);
 }
 
-std::string SrsImplCcApiWorker::status_info() {
+std::string SrsCcApiImplWorker::status_info() {
     std::ostringstream ssinfo;
     ssinfo << "g_srs_ccapi_shmptr:" << g_srs_ccapi_shmptr.load();
     ssinfo << " g_srs_ccapi_shmid:" << g_srs_ccapi_shmid.load();
-    ssinfo << " ev_netfd(r:" << (void*)m_ev_netfd_srs_read << "," << (m_ev_netfd_srs_read ? ((st_netfd_t)m_ev_netfd_srs_read)->osfd : 0);
-    ssinfo << " w:" << (void*)m_ev_netfd_srs_write << "," << (m_ev_netfd_srs_write ? ((st_netfd_t)m_ev_netfd_srs_write)->osfd : 0) << ")";
+    ssinfo << " ev_netfd(r:" << (void*)m_ev_netfd_srs_read << " w:" << (void*)m_ev_netfd_srs_write << ")";
     ssinfo << " handler(r:" << m_read_handler.get() << " w:" << m_write_handler.get() << ")";
     ssinfo << " write_cond(" << (void*)m_write_cond << ")";
     return ssinfo.str();  

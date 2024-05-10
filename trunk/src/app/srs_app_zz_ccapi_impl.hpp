@@ -1,19 +1,20 @@
 #pragma once
 
-#include "ccapi/srs_ccapi.hpp"
+#include "srs_ccapi.hpp"
+#include "srs_protocol_st.hpp"
 
 using namespace srs_ccapi;
 
-class SrsImplCcApiHandler;
+class SrsCcApiImplHandler;
 
-class SrsImplCcApiWorker
+class SrsCcApiImplWorker
 {
 public:
-    friend class SrsImplCcApiHandler;
+    friend class SrsCcApiImplHandler;
 
 public:
-    SrsImplCcApiWorker();
-    ~SrsImplCcApiWorker();
+    SrsCcApiImplWorker();
+    ~SrsCcApiImplWorker();
 
 public:
     bool dostart(int evfd_srs_read, int evfd_srs_write, int shmid);
@@ -26,7 +27,7 @@ private:
 private:
     srs_netfd_t m_ev_netfd_srs_read;
     srs_netfd_t m_ev_netfd_srs_write;
-    std::shared_ptr<SrsImplCcApiHandler> m_read_handler;
-    std::shared_ptr<SrsImplCcApiHandler> m_write_handler;
+    std::shared_ptr<SrsCcApiImplHandler> m_read_handler;
+    std::shared_ptr<SrsCcApiImplHandler> m_write_handler;
     srs_cond_t m_write_cond;
 };
