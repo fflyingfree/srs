@@ -122,7 +122,7 @@ private:
                 srs_error("Error srsccapiimpl, handler cid(%s) st_read close with nret 0, err:%d %s, exit", m_cid.c_str(), errno, strerror(errno));
                 exit(1);
             }else if(nret < 0) {
-                if(!(errno == EAGAIN || errno == EINTR)) {
+                if(!(errno == EAGAIN || errno == EINTR || errno == ETIME)) {
                     srs_error("Error srsccapiimpl, handler cid(%s) st_read error(nret:%d err:%d %s), exit", m_cid.c_str(), nret, errno, strerror(errno));
                     exit(1);
                 }
@@ -164,7 +164,7 @@ private:
                     srs_error("Error srsccapiimpl, handler cid(%s) st_write close with wret 0, err:%d %s, exit", m_cid.c_str(), errno, strerror(errno));
                     exit(1);
                 }else if(wret < 0) {
-                    if(!(errno == EAGAIN || errno == EINTR)) {
+                    if(!(errno == EAGAIN || errno == EINTR || errno == ETIME)) {
                         srs_error("Error srsccapiimpl, handler cid(%s) st_write error(wret:%d err:%d %s), exit", m_cid.c_str(), wret, errno, strerror(errno));
                         exit(1);
                     }
