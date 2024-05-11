@@ -14,6 +14,9 @@ public:
     }
 
 public:
+    void init() {
+        _flag.clear(std::memory_order_release);
+    }
     void lock() {
         while(_flag.test_and_set(std::memory_order_acquire)) {
         }

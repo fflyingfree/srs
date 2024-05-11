@@ -17,10 +17,20 @@ class SrsCcApiSharedMemory
 {
 public:
     SrsCcApiSharedMemory() {
-        _msg_fromsrs_count = 0;
-        _msg_tosrs_count = 0;
     }
     ~SrsCcApiSharedMemory() {
+    }
+
+public:
+    void init() {
+        _msg_fromsrs_count = 0;
+        _msg_tosrs_count = 0;
+        _msg_fromsrs_locker.init();
+        _msg_tosrs_locker.init();
+    }
+    void destroy() {
+        _msg_fromsrs_que.clear();
+        _msg_tosrs_que.clear();
     }
 
 public:
@@ -102,8 +112,11 @@ inline SrsCcApiSharedMemory* shm_get() {
     if(shmid >= 0) {
         shmptr = static_cast<SrsCcApiSharedMemory*>(shmat(shmid, nullptr, 0));
         if(shmptr && shmptr != reinterpret_cast<SrsCcApiSharedMemory*>(-1)) {
-            g_srs_ccapi_shmptr = shmptr;
-            shmptr = g_srs_ccapi_shmptr.load();
+            if(shmptr != g_srs_ccapi_shmptr.load()) {
+                shmptr->init();
+                g_srs_ccapi_shmptr = shmptr;
+                shmptr = g_srs_ccapi_shmptr.load();
+            }
         }
     }
     return shmptr;
@@ -112,6 +125,7 @@ inline SrsCcApiSharedMemory* shm_get() {
 inline void shm_detach() {
     SrsCcApiSharedMemory* shmptr = g_srs_ccapi_shmptr.load();
     if(shmptr != nullptr) {
+        shmptr->destroy();
         shmdt((const void*)shmptr);
     }
     g_srs_ccapi_shmptr = nullptr;
