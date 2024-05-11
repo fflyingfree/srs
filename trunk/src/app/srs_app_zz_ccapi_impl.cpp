@@ -254,7 +254,7 @@ void SrsCcApiImplWorker::heatPing() {
 
 void SrsCcApiImplWorker::postMsg(std::shared_ptr<SrsCcApiMsg> pMsg) {
     SrsCcApiSharedMemory* shmptr = shm_get();
-    if(!shmptr) {
+    if(shmptr) {
         shmptr->putMsg(pMsg, true);
         notifyev();
     }
