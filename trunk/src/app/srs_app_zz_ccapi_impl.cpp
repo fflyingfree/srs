@@ -177,7 +177,7 @@ private:
 private:
     void handler_msg_on_read(std::shared_ptr<SrsCcApiMsg> pmsg) {
         srs_trace("Debug srsccapiimpl, handler cid(%s), pmsg:%p (_msg_id:%ld _msg_type:%d _stream_id:%s)", m_cid.c_str(), pmsg.get(),
-            pmsg->_msg_id, pmsg->_msg_type, pmsg->_stream_id);
+            pmsg->_msg_id, pmsg->_msg_type, pmsg->_stream_id.c_str());
     }
 
 private:
