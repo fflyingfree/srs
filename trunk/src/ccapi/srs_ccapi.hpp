@@ -147,13 +147,16 @@ inline SrsCcApiSharedMemory* shm_get() {
 inline void shm_detach() {
     SrsCcApiSharedMemory* shmptr = g_srs_ccapi_shmptr.load();
     if(shmptr != nullptr) {
-        shmptr->destroy();
         shmdt((const void*)shmptr);
     }
     g_srs_ccapi_shmptr = nullptr;
 }
 
 inline void shm_remove() {
+    SrsCcApiSharedMemory* shmptr = g_srs_ccapi_shmptr.load();
+    if(shmptr != nullptr) {
+        shmptr->destroy();
+    }
     int shmid = g_srs_ccapi_shmid.load();
     if(shmid >= 0) {
         shmctl(shmid, IPC_RMID, nullptr);
