@@ -48,7 +48,7 @@ public:
         srs_error_t err = srs_success;
         for(;;) {
             srs_trace("Debug srsccapiimpl, timer cid(%s) running, counter:%ld", m_cid.c_str(), m_counter);
-            m_worker->notifyev();
+            m_worker->heatPing();
             srs_usleep(1000*1000);
             m_counter++;
         }
@@ -176,9 +176,9 @@ private:
 
 private:
     void handler_msg_on_read(std::shared_ptr<SrsCcApiMsg> pmsg) {
-        srs_trace("Debug srsccapiimpl, handler cid(%s), pmsg:%p", m_cid.c_str(), pmsg.get());
+        srs_trace("Debug srsccapiimpl, handler cid(%s), pmsg:%p (_msg_id:%ld _msg_type:%d _stream_id:%s)", m_cid.c_str(), pmsg.get(),
+            pmsg->_msg_id, pmsg->_msg_type, pmsg->_stream_id);
     }
-
 
 private:
     SrsCcApiImplWorker* m_worker;
@@ -195,6 +195,7 @@ SrsCcApiImplWorker::SrsCcApiImplWorker() {
     m_ev_netfd_srs_read = nullptr;
     m_ev_netfd_srs_write = nullptr;
     m_write_cond = nullptr;
+    m_msg_gen_id = 0;
 }
 
 SrsCcApiImplWorker::~SrsCcApiImplWorker() {
@@ -240,6 +241,20 @@ bool SrsCcApiImplWorker::dostart(int evfd_srs_read, int evfd_srs_write, int shmi
 
 void SrsCcApiImplWorker::notifyev() {
     srs_cond_signal(m_write_cond);
+}
+
+void SrsCcApiImplWorker::heatPing() {
+    long msgid = ++m_msg_gen_id;
+    std::shared_ptr<SrsCcApiNotifyMsgPing> pingMsg = std::make_shared<SrsCcApiNotifyMsgPing>(msgid);
+    postMsg(pingMsg);
+}
+
+void SrsCcApiImplWorker::postMsg(std::shared_ptr<SrsCcApiMsg> pMsg) {
+    SrsCcApiSharedMemory* shmptr = shm_get();
+    if(!shmptr) {
+        shmptr->putMsg(pMsg, true);
+        notifyev();
+    }
 }
 
 void SrsCcApiImplWorker::dostop() {

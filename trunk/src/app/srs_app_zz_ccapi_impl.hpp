@@ -23,6 +23,12 @@ public:
     bool dostart(int evfd_srs_read, int evfd_srs_write, int shmid);
     void notifyev();
 
+public:
+    void heatPing();
+
+private:
+    void postMsg(std::shared_ptr<SrsCcApiMsg> pMsg);
+
 private:
     void dostop();
     std::string status_info();
@@ -35,6 +41,9 @@ private:
     std::shared_ptr<SrsCcApiImplHandler> m_read_handler;
     std::shared_ptr<SrsCcApiImplHandler> m_write_handler;
     srs_cond_t m_write_cond;
+
+private:
+    long m_msg_gen_id;
 };
 
 extern SrsCcApiImplWorker gSrsCcApiImplWorker;

@@ -1,6 +1,6 @@
 #pragma once
 
-#include <atomic>
+#include "_inner_srs_ccapi_comm.hpp"
 
 namespace srs_ccapi
 {
