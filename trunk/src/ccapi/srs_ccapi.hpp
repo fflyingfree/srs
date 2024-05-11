@@ -16,6 +16,32 @@ namespace srs_ccapi
 class SrsCcApiSharedMemory
 {
 public:
+    class _inner_struct
+    {
+    public:
+        _inner_struct() {
+            _msg_fromsrs_locker.init();
+            _msg_tosrs_locker.init();
+            _msg_fromsrs_que.clear();
+            _msg_tosrs_que.clear();
+            _msg_fromsrs_count = 0;
+            _msg_tosrs_count = 0;
+        }
+        ~_inner_struct() {
+            _msg_fromsrs_que.clear();
+            _msg_tosrs_que.clear();
+        }
+    
+    public:
+        srs_ccapi_SpinLocker _msg_fromsrs_locker;
+        std::deque<std::shared_ptr<SrsCcApiMsg>> _msg_fromsrs_que;
+        std::atomic<long> _msg_fromsrs_count;
+        srs_ccapi_SpinLocker _msg_tosrs_locker;
+        std::deque<std::shared_ptr<SrsCcApiMsg>> _msg_tosrs_que;
+        std::atomic<long> _msg_tosrs_count;
+    };
+
+public:
     SrsCcApiSharedMemory() {
     }
     ~SrsCcApiSharedMemory() {
@@ -23,24 +49,19 @@ public:
 
 public:
     void init() {
-        _msg_fromsrs_count = 0;
-        _msg_tosrs_count = 0;
-        _msg_fromsrs_locker.init();
-        _msg_tosrs_locker.init();
-        _msg_fromsrs_que = std::deque<std::shared_ptr<SrsCcApiMsg>>();
-        _msg_tosrs_que = std::deque<std::shared_ptr<SrsCcApiMsg>>();
+        m_struct = new _inner_struct();
     }
     void destroy() {
-        _msg_fromsrs_que.clear();
-        _msg_tosrs_que.clear();
+        delete _inner_struct();
+        m_struct = nullptr;
     }
 
 public:
     long msgCount(bool fromSrs) {
         if(fromSrs) {
-            return _msg_fromsrs_count.load();
+            return m_struct->_msg_fromsrs_count.load();
         }else{
-            return _msg_tosrs_count.load();
+            return m_struct->_msg_tosrs_count.load();
         }
     }
     //putMsg之后，需要写eventfd通知对方！！
@@ -55,9 +76,9 @@ public:
             _locker.unlock();
         };
         if(fromSrs) {
-            doPut(_msg_fromsrs_locker, _msg_fromsrs_que, _msg_fromsrs_count);
+            doPut(m_struct->_msg_fromsrs_locker, m_struct->_msg_fromsrs_que, m_struct->_msg_fromsrs_count);
         }else{
-            doPut(_msg_tosrs_locker, _msg_tosrs_que, _msg_tosrs_count);
+            doPut(m_struct->_msg_tosrs_locker, m_struct->_msg_tosrs_que, m_struct->_msg_tosrs_count);
         }
     }
     //读到eventfd之后，调用getMsg！！
@@ -74,19 +95,14 @@ public:
             return pMsg;
         };
         if(fromSrs) {
-            return doGet(_msg_fromsrs_locker, _msg_fromsrs_que, _msg_fromsrs_count);
+            return doGet(m_struct->_msg_fromsrs_locker, m_struct->_msg_fromsrs_que, m_struct->_msg_fromsrs_count);
         }else{
-            return doGet(_msg_tosrs_locker, _msg_tosrs_que, _msg_tosrs_count);
+            return doGet(m_struct->_msg_tosrs_locker, m_struct->_msg_tosrs_que, m_struct->_msg_tosrs_count);
         }
     }
 
 private:
-    srs_ccapi_SpinLocker _msg_fromsrs_locker;
-    std::deque<std::shared_ptr<SrsCcApiMsg>> _msg_fromsrs_que;
-    std::atomic<long> _msg_fromsrs_count;
-    srs_ccapi_SpinLocker _msg_tosrs_locker;
-    std::deque<std::shared_ptr<SrsCcApiMsg>> _msg_tosrs_que;
-    std::atomic<long> _msg_tosrs_count;
+    _inner_struct* m_struct;
 };
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 //@共享内存指针全局声明，需要在外部定义！！
