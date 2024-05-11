@@ -52,7 +52,7 @@ public:
         m_struct = new _inner_struct();
     }
     void destroy() {
-        delete _inner_struct();
+        delete m_struct;
         m_struct = nullptr;
     }
 
