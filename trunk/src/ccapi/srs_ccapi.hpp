@@ -27,6 +27,8 @@ public:
         _msg_tosrs_count = 0;
         _msg_fromsrs_locker.init();
         _msg_tosrs_locker.init();
+        _msg_fromsrs_que = std::deque<std::shared_ptr<SrsCcApiMsg>>();
+        _msg_tosrs_que = std::deque<std::shared_ptr<SrsCcApiMsg>>();
     }
     void destroy() {
         _msg_fromsrs_que.clear();
