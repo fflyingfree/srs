@@ -43,22 +43,25 @@ public:
 
 public:
     SrsCcApiSharedMemory() {
+        printf("xxxxxxxxxxinit00 %p %p\r\n", this, m_struct);
     }
     ~SrsCcApiSharedMemory() {
+        printf("xxxxxxxxxxdel00 %p %p\r\n", this, m_struct);
     }
 
 public:
     void init() {
         m_struct = new _inner_struct();
+        printf("xxxxxxxxxxinit %p %p\r\n", this, m_struct);
     }
     void destroy() {
+        printf("xxxxxxxxxxdel %p %p\r\n", this, m_struct);
         delete m_struct;
         m_struct = nullptr;
     }
 
 public:
     long msgCount(bool fromSrs) {
-        printf("dddddddddddddddddddddddd fromSrs:%d msgCount %p m_struct:%p \r\n", fromSrs, this, m_struct);
         if(fromSrs) {
             return m_struct->_msg_fromsrs_count.load();
         }else{
@@ -67,7 +70,6 @@ public:
     }
     //putMsg之后，需要写eventfd通知对方！！
     void putMsg(std::shared_ptr<SrsCcApiMsg> pMsg, bool fromSrs) {
-        printf("dddddddddddddddddddddddd fromSrs:%d putMsg %p m_struct:%p \r\n", fromSrs, this, m_struct);
         if(!pMsg) {
             return;
         }
@@ -85,7 +87,6 @@ public:
     }
     //读到eventfd之后，调用getMsg！！
     std::shared_ptr<SrsCcApiMsg> getMsg(bool fromSrs) {
-        printf("dddddddddddddddddddddddd fromSrs:%d getMsg %p m_struct:%p \r\n", fromSrs, this, m_struct);
         auto doGet = [](srs_ccapi_SpinLocker& _locker, std::deque<std::shared_ptr<SrsCcApiMsg>>& _que, std::atomic<long>& _count)->std::shared_ptr<SrsCcApiMsg> {
             std::shared_ptr<SrsCcApiMsg> pMsg;
             _locker.lock();
