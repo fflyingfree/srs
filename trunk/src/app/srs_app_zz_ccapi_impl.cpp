@@ -155,11 +155,14 @@ private:
             SrsCcApiSharedMemory* shmptr = shm_get();
             if(!shmptr) {
                 srs_error("Error srsccapiimpl, handler cid(%s) shmptr nullptr", m_cid.c_str());
+            }else{
+                srs_trace("xxxxxxxxxxx cnt:%ld", shmptr->msgCount(true));
             }
             if(shmptr && shmptr->msgCount(true) > 0) {
                 long one = 1;
                 errno = 0;
                 int wret = st_write((st_netfd_t)m_worker->m_ev_netfd_srs_write, &one, sizeof(one), 100*1000);
+                srs_trace("xxxxxxxxxxx wret:%d err:%d %s", wret, errno. strerror(errno));
                 if(wret == 0) {
                     srs_error("Error srsccapiimpl, handler cid(%s) st_write close with wret 0, err:%d %s, exit", m_cid.c_str(), errno, strerror(errno));
                     exit(1);
