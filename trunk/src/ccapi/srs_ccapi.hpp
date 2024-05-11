@@ -115,7 +115,11 @@ extern std::atomic<int> g_srs_ccapi_shmid;
 //@共享内存操作函数
 inline int shm_create(uint8_t id) {
     key_t key = ftok(".", (int)id);
-    int shmid = shmget(key, sizeof(SrsCcApiSharedMemory), IPC_CREAT|0666);
+    int shmid = shmget(key, 0, 0666);
+    if(shmid >= 0) {
+        shmctl(shmid, IPC_RMID, nullptr);
+    }
+    shmid = shmget(key, sizeof(SrsCcApiSharedMemory), IPC_CREAT|0666);
     g_srs_ccapi_shmid = shmid;
     shmid = g_srs_ccapi_shmid.load();
     return shmid;
