@@ -104,7 +104,7 @@ SrsGprof=""; SrsGprofLink=""; if [[ $SRS_GPROF == YES ]]; then SrsGprof=" -pg -l
 # performance of gperf
 SrsGperf=""; SrsGperfLink=""; if [[ $SRS_GPERF == YES ]]; then SrsGperfLink=" -lpthread"; fi
 # the cxx flag generated.
-CXXFLAGS="${CXXFLAGS} ${CppStd}${WarnLevel}${GDBDebug}${LibraryCompile}${SrsGprof}"
+CXXFLAGS="${CXXFLAGS} ${CppStd}${WarnLevel}${GDBDebug}${LibraryCompile}${SrsGprof} -fPIC"
 if [[ $SRS_GPERF == YES ]]; then
     CXXFLAGS="${CXXFLAGS} -fno-builtin-malloc -fno-builtin-calloc -fno-builtin-realloc -fno-builtin-free";
 fi
@@ -123,7 +123,7 @@ fi
 # For Sanitizer
 # @doc: https://github.com/google/sanitizers/wiki/AddressSanitizer
 if [[ $SRS_SANITIZER == YES && $OS_IS_X86_64 == YES ]]; then
-    CXXFLAGS="${CXXFLAGS} -fPIC -fsanitize=address -fno-omit-frame-pointer";
+    CXXFLAGS="${CXXFLAGS} -fsanitize=address -fno-omit-frame-pointer";
 fi
 
 # Start to generate the Makefile.
