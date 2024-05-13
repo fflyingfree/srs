@@ -20,7 +20,7 @@ public:
 
 public:
     bool ison();
-    bool dostart(int evfd_srs_read, int evfd_srs_write, int shmid);
+    bool dostart(int evfd_srs_read, int evfd_srs_write);
     void notifyev();
 
 public:
