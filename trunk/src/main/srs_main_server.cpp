@@ -296,7 +296,7 @@ srs_error_t do_main(int argc, char** argv, char** envp)
     return err;
 }
 
-int main(int argc, char** argv, char** envp)
+int Main(int argc, char** argv, char** envp)
 {
     srs_error_t err = do_main(argc, argv, envp);
 

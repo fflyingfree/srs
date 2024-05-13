@@ -14,7 +14,7 @@
 
 FILE=${SRS_OBJS}/Makefile
 
-APP_TARGET="${SRS_OBJS}/${APP_NAME}"
+APP_TARGET="${SRS_OBJS}/lib${APP_NAME}.a"
 
 echo "Generating app ${APP_NAME} depends.";
 
@@ -58,7 +58,7 @@ echo "Generating app ${APP_NAME} link.";
 
 # genereate the actual link command, for example:
 #       	$(LINK)  -o objs/srs objs/src/core/srs_core.o -ldl
-echo -n "	\$(LINK) -o ${APP_TARGET} " >> ${FILE}
+echo -n "	\$(AR) \$(ARFLAGS) ${APP_TARGET} " >> ${FILE}
 for item in ${MODULE_OBJS[*]}; do
     FILE_NAME=`basename $item`
     FILE_NAME=${FILE_NAME%.*}
@@ -89,7 +89,8 @@ for item in ${ModuleLibFiles[*]}; do
     echo -n "$item " >> ${FILE}
 done
 # link options.
-echo -n "${LINK_OPTIONS}" >> ${FILE}
+echo ">>>>>>> app ${APP_NAME} link options: ${LINK_OPTIONS} !!"
+#echo -n "${LINK_OPTIONS}" >> ${FILE}
 echo "" >> ${FILE}
 echo "" >> ${FILE}
 
