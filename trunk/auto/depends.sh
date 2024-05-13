@@ -246,7 +246,7 @@ fi
 # check the cross build flag file, if flag changed, need to rebuild the st.
 _ST_MAKE=linux-debug && _ST_OBJ="LINUX_`uname -r`_DBG"
 # Always alloc on heap, @see https://github.com/ossrs/srs/issues/509#issuecomment-719931676
-_ST_EXTRA_CFLAGS="-DMALLOC_STACK"
+_ST_EXTRA_CFLAGS="-fPIC -DMALLOC_STACK"
 # For valgrind to detect memory issues.
 if [[ $SRS_VALGRIND == YES ]]; then
     _ST_EXTRA_CFLAGS="$_ST_EXTRA_CFLAGS -DMD_VALGRIND"
@@ -532,7 +532,7 @@ if [[ $SRS_RTC == YES && $SRS_USE_SYS_FFMPEG != YES && $SRS_FFMPEG_OPUS != YES ]
         (
             # Opus requires automake 1.15, and fails for automake 1.16+, so we run autoreconf to fix it.
             cd ${SRS_OBJS}/${SRS_PLATFORM}/opus-1.3.1 && autoreconf &&
-            ./configure --prefix=${SRS_DEPENDS_LIBS}/${SRS_PLATFORM}/3rdparty/opus --enable-static $OPUS_OPTIONS
+            CFLAGS="-fPIC" CXXFLAGS="-fPIC" ./configure --prefix=${SRS_DEPENDS_LIBS}/${SRS_PLATFORM}/3rdparty/opus --enable-static $OPUS_OPTIONS
         ) &&
         make -C ${SRS_OBJS}/${SRS_PLATFORM}/opus-1.3.1 ${SRS_JOBS} &&
         make -C ${SRS_OBJS}/${SRS_PLATFORM}/opus-1.3.1 install &&
@@ -674,7 +674,7 @@ if [[ $SRS_SRT == YES && $SRS_USE_SYS_SRT == NO ]]; then
     if [[ $SRS_SHARED_SRT == YES ]]; then
         LIBSRT_OPTIONS="$LIBSRT_OPTIONS --enable-shared=1"
     else
-        LIBSRT_OPTIONS="$LIBSRT_OPTIONS --enable-shared=0"
+        LIBSRT_OPTIONS="$LIBSRT_OPTIONS --enable-shared=1"
     fi
     # For windows build, over cygwin
     if [[ $SRS_CYGWIN64 == YES ]]; then

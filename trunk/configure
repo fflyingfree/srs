@@ -123,7 +123,7 @@ fi
 # For Sanitizer
 # @doc: https://github.com/google/sanitizers/wiki/AddressSanitizer
 if [[ $SRS_SANITIZER == YES && $OS_IS_X86_64 == YES ]]; then
-    CXXFLAGS="${CXXFLAGS} -fsanitize=address -fno-omit-frame-pointer";
+    CXXFLAGS="${CXXFLAGS} -fPIC -rdynamic -fsanitize=address -fno-omit-frame-pointer";
 fi
 
 # Start to generate the Makefile.
@@ -147,7 +147,7 @@ END
 #
 
 # the link options, always use static link
-SrsLinkOptions="-ldl -lpthread";
+SrsLinkOptions="-fPIC -ldl -lpthread";
 
 # st(state-threads) the basic network library for SRS.
 LibSTRoot="${SRS_OBJS}/st"; LibSTfile="${LibSTRoot}/libst.a"
@@ -584,7 +584,7 @@ destroy:
 	(cd ${SRS_OBJS} && rm -rf ${SRS_PLATFORM})
 
 clean_srs:
-	@(cd ${SRS_OBJS} && rm -rf srs libsrs.a srs_utest src/* utest/*)
+	@(cd ${SRS_OBJS} && rm -rf srs libsrs.so srs_utest src/* utest/*)
 
 clean_modules:
 	@(cd ${SRS_OBJS} && rm -rf $__mdefaults)
