@@ -543,7 +543,7 @@ function apply_auto_options() {
     # @see https://github.com/ossrs/srs/issues/3347
     if [[ $SRS_SANITIZER == RESERVED && $OS_IS_CENTOS != YES ]]; then
         echo "Enable asan by auto options."
-        SRS_SANITIZER=YES
+        #SRS_SANITIZER=YES
     fi
 
     # If enable gperf, disable sanitizer.
