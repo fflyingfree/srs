@@ -204,7 +204,7 @@ srs_error_t do_main(int argc, char** argv, char** envp)
     }
 
     // Detect whether set SRS config by envrionment variables.
-    for (char** pp = envp; *pp; pp++) {
+    for (char** pp = envp; pp && *pp; pp++) {
         char* p = *pp;
         if (p[0] == 'S' && p[1] == 'R' && p[2] == 'S' && p[3] == '_') {
             _srs_config_by_env = true;
