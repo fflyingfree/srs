@@ -269,7 +269,13 @@ void SrsCcApiImplWorker::postMsg(std::shared_ptr<SrsCcApiMsg> pMsg) {
 
 void SrsCcApiImplWorker::dostop() {
     srs_trace("Notice srsccapiimpl, worker stopping on status(%s)..", status_info().c_str());
-    g_srs_ccapi_shm.reset();
+    m_timer.reset();
+    m_read_handler.reset();
+    m_write_handler.reset();
+    if(m_write_cond) {
+        srs_cond_destroy(m_write_cond);
+        m_write_cond = nullptr;
+    }
     if(m_ev_netfd_srs_read) {
         st_netfd_free((st_netfd_t)m_ev_netfd_srs_read);
         m_ev_netfd_srs_read = nullptr;
@@ -278,13 +284,7 @@ void SrsCcApiImplWorker::dostop() {
         st_netfd_free((st_netfd_t)m_ev_netfd_srs_write);
         m_ev_netfd_srs_write = nullptr;
     }
-    m_timer.reset();
-    m_read_handler.reset();
-    m_write_handler.reset();   
-    if(m_write_cond) {
-        srs_cond_destroy(m_write_cond);
-        m_write_cond = nullptr;
-    }
+    g_srs_ccapi_shm.reset();
     m_switch_on = false;
 }
 
