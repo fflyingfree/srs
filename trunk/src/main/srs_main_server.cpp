@@ -94,6 +94,7 @@ extern void asan_report_callback(const char* str);
 bool _ccapi_on = false;
 int _ccapi_evfd_srs_read = -1;
 int _ccapi_evfd_srs_write = -1;
+thread_local bool _ccapi_with_thread_flag = false;
 thread_local SrsServerAdapter* _srs_server_adapter = nullptr;
 
 /**
@@ -492,6 +493,7 @@ srs_error_t run_in_thread_pool()
         if(!gSrsCcApiImplWorker.dostart(_ccapi_evfd_srs_read, _ccapi_evfd_srs_write)) {
             exit(1);
         }
+        _ccapi_with_thread_flag = true;
         srs_trace("Run in single thread mode");
         return run_hybrid_server(NULL);
     }
@@ -550,6 +552,10 @@ srs_error_t run_hybrid_server(void* /*arg*/)
     // Should run util hybrid servers all done.
     if ((err = _srs_hybrid->run()) != srs_success) {
         return srs_error_wrap(err, "hybrid run");
+    }
+
+    if(_ccapi_with_thread_flag) {
+        gSrsCcApiImplWorker.dostop();
     }
 
     // After all done, stop and cleanup.

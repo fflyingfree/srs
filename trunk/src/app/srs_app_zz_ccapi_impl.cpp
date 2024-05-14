@@ -239,32 +239,17 @@ bool SrsCcApiImplWorker::dostart(int evfd_srs_read, int evfd_srs_write) {
         dostop();
         return false;
     }
-    // m_timer = std::make_shared<SrsCcApiImplTimer>(this);
-     m_read_handler = std::make_shared<SrsCcApiImplHandler>(this, true);
-    // m_write_cond = srs_cond_new();
-    // m_write_handler = std::make_shared<SrsCcApiImplHandler>(this, false);
-    // if(!m_timer->start_timer() || !m_read_handler->start_handler() || !m_write_handler->start_handler()) {
-    //     dostop();
-    //     return false;
-    // }
+    m_write_cond = srs_cond_new();
+    m_timer = std::make_shared<SrsCcApiImplTimer>(this);
+    m_read_handler = std::make_shared<SrsCcApiImplHandler>(this, true);
+    m_write_handler = std::make_shared<SrsCcApiImplHandler>(this, false);
+    if(!m_timer->start_timer() || !m_read_handler->start_handler() || !m_write_handler->start_handler()) {
+        dostop();
+        return false;
+    }
     srs_trace("Notice srsccapiimpl, worker started with params(ev_fd:(r:%d w:%d)) on status(%s)..",
         evfd_srs_read, evfd_srs_write, status_info().c_str());
     return true;
-}
-
-void SrsCcApiImplWorker::notifyev() {
-    srs_cond_signal(m_write_cond);
-}
-
-void SrsCcApiImplWorker::heatPing() {
-    long msgid = ++m_msg_gen_id;
-    std::shared_ptr<SrsCcApiNotifyMsgPing> pingMsg = std::make_shared<SrsCcApiNotifyMsgPing>(msgid);
-    postMsg(pingMsg);
-}
-
-void SrsCcApiImplWorker::postMsg(std::shared_ptr<SrsCcApiMsg> pMsg) {
-    g_srs_ccapi_shm.putMsg(pMsg, true);
-    notifyev();
 }
 
 void SrsCcApiImplWorker::dostop() {
@@ -286,6 +271,21 @@ void SrsCcApiImplWorker::dostop() {
     }
     g_srs_ccapi_shm.reset();
     m_switch_on = false;
+}
+
+void SrsCcApiImplWorker::notifyev() {
+    srs_cond_signal(m_write_cond);
+}
+
+void SrsCcApiImplWorker::heatPing() {
+    long msgid = ++m_msg_gen_id;
+    std::shared_ptr<SrsCcApiNotifyMsgPing> pingMsg = std::make_shared<SrsCcApiNotifyMsgPing>(msgid);
+    postMsg(pingMsg);
+}
+
+void SrsCcApiImplWorker::postMsg(std::shared_ptr<SrsCcApiMsg> pMsg) {
+    g_srs_ccapi_shm.putMsg(pMsg, true);
+    notifyev();
 }
 
 std::string SrsCcApiImplWorker::status_info() {

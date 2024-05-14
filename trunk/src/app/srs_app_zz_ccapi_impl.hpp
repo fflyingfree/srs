@@ -21,6 +21,7 @@ public:
 public:
     bool ison();
     bool dostart(int evfd_srs_read, int evfd_srs_write);
+    void dostop();
     void notifyev();
 
 public:
@@ -30,7 +31,6 @@ private:
     void postMsg(std::shared_ptr<SrsCcApiMsg> pMsg);
 
 private:
-    void dostop();
     std::string status_info();
 
 private:
