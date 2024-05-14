@@ -489,9 +489,9 @@ srs_error_t run_in_thread_pool()
 #else
 
     if(_ccapi_on) {
-        if(!gSrsCcApiImplWorker.dostart(_ccapi_evfd_srs_read, _ccapi_evfd_srs_write)) {
-            exit(1);
-        }
+        // if(!gSrsCcApiImplWorker.dostart(_ccapi_evfd_srs_read, _ccapi_evfd_srs_write)) {
+        //     exit(1);
+        // }
         srs_trace("Run in single thread mode");
         return run_hybrid_server(NULL);
     }
