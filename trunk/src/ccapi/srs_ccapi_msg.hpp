@@ -31,6 +31,7 @@ public:
     enum EM_SRS_CCAPI_NOTIFY_MSG_TYPE
     {
         e_srs_ccapi_notifymsg_ping = 1001,
+        e_srs_ccapi_notifymsg_signal = 1002,
     };
 
 public:
@@ -46,7 +47,7 @@ class SrsCcApiMediaMsgBase : public SrsCcApiMsg
 public:
     enum EM_SRS_CCAPI_MEDIA_MSG_TYPE
     {
-        e_srs_ccapi_mediamsg_frame = 2001,
+        e_srs_ccapi_mediamsg_videoframe = 2001,
     };
 
 public:
@@ -64,12 +65,24 @@ public:
     virtual ~SrsCcApiNotifyMsgPing() { }
 };
 
-class SrsCcApiMediaMsgFrame : public SrsCcApiMediaMsgBase
+class SrsCcApiNotifyMsgSignal : public SrsCcApiNotifyMsgBase
 {
 public:
-    SrsCcApiMediaMsgFrame(long msgId, const std::string& streamId) : SrsCcApiMediaMsgBase(msgId, e_srs_ccapi_mediamsg_frame, streamId) {
+    SrsCcApiNotifyMsgSignal(long msgId) : SrsCcApiNotifyMsgBase(msgId, e_srs_ccapi_notifymsg_signal, "", 0) {
+        signo = 0;
     }
-    virtual ~SrsCcApiMediaMsgFrame() { }
+    virtual ~SrsCcApiNotifyMsgSignal() { }
+
+public:
+    int signo;
+};
+
+class SrsCcApiMediaMsgVideoFrame : public SrsCcApiMediaMsgBase
+{
+public:
+    SrsCcApiMediaMsgVideoFrame(long msgId, const std::string& streamId) : SrsCcApiMediaMsgBase(msgId, e_srs_ccapi_mediamsg_videoframe, streamId) {
+    }
+    virtual ~SrsCcApiMediaMsgVideoFrame() { }
 
 public:
     //todo

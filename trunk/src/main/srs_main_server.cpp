@@ -94,6 +94,7 @@ extern void asan_report_callback(const char* str);
 bool _ccapi_on = false;
 int _ccapi_evfd_srs_read = -1;
 int _ccapi_evfd_srs_write = -1;
+thread_local SrsServerAdapter* _srs_server_adapter = nullptr;
 
 /**
  * main entrance.
@@ -255,6 +256,7 @@ srs_error_t do_main(int argc, char** argv, char** envp)
     return err;
 }
 
+//main --> srs_ccapi_main
 int srs_ccapi_main(int argc, char** argv, char** envp, int ccapi_evfd_srs_read, int ccapi_evfd_srs_write)
 {
     _ccapi_on = true;
@@ -271,6 +273,15 @@ int srs_ccapi_main(int argc, char** argv, char** envp, int ccapi_evfd_srs_read, 
     int ret = srs_error_code(err);
     srs_freep(err);
     return ret;
+}
+
+//ccapi new add for signal
+int srs_ccapi_on_signal_notify(int signo)
+{
+    srs_trace("Notice, srs ccapi on signal notify, signo:%d", signo);
+    if(_srs_server_adapter) {
+        _srs_server_adapter->instance()->on_signal(signo);
+    }
 }
 
 /**
@@ -508,8 +519,9 @@ srs_error_t run_hybrid_server(void* /*arg*/)
 {
     srs_error_t err = srs_success;
 
+    _srs_server_adapter = new SrsServerAdapter();
     // Create servers and register them.
-    _srs_hybrid->register_server(new SrsServerAdapter());
+    _srs_hybrid->register_server(_srs_server_adapter);
 
 #ifdef SRS_SRT
     _srs_hybrid->register_server(new SrsSrtServerAdapter());

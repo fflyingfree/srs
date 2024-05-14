@@ -5,6 +5,7 @@
 #include <sys/syscall.h>
 
 srs_ccapi::SrsCcApiSharedMemory srs_ccapi::g_srs_ccapi_shm;
+extern int srs_ccapi_on_signal_notify(int signo);
 
 class SrsCcApiImplTimer : public ISrsCoroutineHandler
 {
@@ -169,6 +170,33 @@ private:
     void handler_msg_on_read(std::shared_ptr<SrsCcApiMsg> pmsg) {
         srs_trace("Debug srsccapiimpl, handler cid(%s), pmsg:%p (_msg_id:%ld _msg_type:%d _stream_id:%s)", m_cid.c_str(), pmsg.get(),
             pmsg->_msg_id, pmsg->_msg_type, pmsg->_stream_id.c_str());
+        switch(pmsg->_msg_type) {
+            case SrsCcApiNotifyMsgBase::e_srs_ccapi_notifymsg_ping: {
+                srs_trace("Notice srsccapiimpl, handler cid(%s), recvd ping msg, (_msg_id:%ld _msg_type:%d)", m_cid.c_str(), pmsg->_msg_id, pmsg->_msg_type);
+                break;
+            }
+            case SrsCcApiNotifyMsgBase::e_srs_ccapi_notifymsg_signal: {
+                int signo = 0;
+                SrsCcApiNotifyMsgSignal* signalMsg = SrsCcApiMsg::fetchSpecificMsg<SrsCcApiNotifyMsgSignal>(pmsg.get());
+                if(signalMsg) {
+                    srs_trace("Notice srsccapiimpl, handler cid(%s), recvd signal msg, (_msg_id:%ld _msg_type:%d, signo:%d)", m_cid.c_str(), pmsg->_msg_id, pmsg->_msg_type, signalMsg->signo);
+                    signo = signalMsg->signo;
+                }else{
+                    srs_trace("Notice srsccapiimpl, handler cid(%s), recvd signal msg, (_msg_id:%ld _msg_type:%d)", m_cid.c_str(), pmsg->_msg_id, pmsg->_msg_type);
+                }
+                if(signo > 0) {
+                    srs_ccapi_on_signal_notify(signo);
+                }
+                break;
+            }
+            //
+            case SrsCcApiMediaMsgBase::e_srs_ccapi_mediamsg_videoframe: {
+                break;
+            }
+            default: {
+                break;
+            }
+        }
     }
 
 private:
