@@ -47,6 +47,9 @@ public:
         srs_trace("Notice srsccapiimpl, timer cid(%s) trd starting cycle", m_cid.c_str());
         srs_error_t err = srs_success;
         for(;;) {
+            if(!m_worker->ison()) {
+                break;
+            }
             srs_trace("Debug srsccapiimpl, timer cid(%s) running, counter:%ld", m_cid.c_str(), m_counter);
             m_worker->heatPing();
             srs_usleep(1000*1000);
@@ -115,6 +118,9 @@ private:
         srs_trace("Notice srsccapiimpl, handler cid(%s) trd starting cycle_on_read", m_cid.c_str());
         srs_error_t err = srs_success;
         for(;;) {
+            if(!m_worker->ison()) {
+                break;
+            }
             long one = 0;
             errno = 0;
             int nret = st_read((st_netfd_t)m_worker->m_ev_netfd_srs_read, &one, sizeof(one), 100*1000);
@@ -147,6 +153,9 @@ private:
         srs_trace("Notice srsccapiimpl, handler cid(%s) trd starting cycle_on_write", m_cid.c_str());
         srs_error_t err = srs_success;
         for(;;) {
+            if(!m_worker->ison()) {
+                break;
+            }
             srs_cond_timedwait(m_worker->m_write_cond, 100*1000);
             if(g_srs_ccapi_shm.msgCount(true) > 0) {
                 long one = 1;
@@ -254,6 +263,7 @@ bool SrsCcApiImplWorker::dostart(int evfd_srs_read, int evfd_srs_write) {
 
 void SrsCcApiImplWorker::dostop() {
     srs_trace("Notice srsccapiimpl, worker stopping on status(%s)..", status_info().c_str());
+    m_switch_on = false;
     m_timer.reset();
     m_read_handler.reset();
     m_write_handler.reset();
@@ -270,7 +280,6 @@ void SrsCcApiImplWorker::dostop() {
         m_ev_netfd_srs_write = nullptr;
     }
     g_srs_ccapi_shm.reset();
-    m_switch_on = false;
 }
 
 void SrsCcApiImplWorker::notifyev() {
