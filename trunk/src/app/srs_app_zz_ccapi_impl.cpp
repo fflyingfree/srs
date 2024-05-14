@@ -5,7 +5,7 @@
 #include <sys/syscall.h>
 
 srs_ccapi::SrsCcApiSharedMemory srs_ccapi::g_srs_ccapi_shm;
-extern int srs_ccapi_on_signal_notify(int signo);
+extern void srs_ccapi_on_signal_notify(int signo);
 
 class SrsCcApiImplTimer : public ISrsCoroutineHandler
 {

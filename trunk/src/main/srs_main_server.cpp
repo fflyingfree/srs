@@ -276,7 +276,7 @@ int srs_ccapi_main(int argc, char** argv, char** envp, int ccapi_evfd_srs_read, 
 }
 
 //ccapi new add for signal
-int srs_ccapi_on_signal_notify(int signo)
+void srs_ccapi_on_signal_notify(int signo)
 {
     srs_trace("Notice, srs ccapi on signal notify, signo:%d", signo);
     if(_srs_server_adapter) {
