@@ -240,7 +240,7 @@ bool SrsCcApiImplWorker::dostart(int evfd_srs_read, int evfd_srs_write) {
         return false;
     }
     // m_timer = std::make_shared<SrsCcApiImplTimer>(this);
-    // m_read_handler = std::make_shared<SrsCcApiImplHandler>(this, true);
+     m_read_handler = std::make_shared<SrsCcApiImplHandler>(this, true);
     // m_write_cond = srs_cond_new();
     // m_write_handler = std::make_shared<SrsCcApiImplHandler>(this, false);
     // if(!m_timer->start_timer() || !m_read_handler->start_handler() || !m_write_handler->start_handler()) {
