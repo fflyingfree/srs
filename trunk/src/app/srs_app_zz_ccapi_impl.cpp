@@ -239,14 +239,14 @@ bool SrsCcApiImplWorker::dostart(int evfd_srs_read, int evfd_srs_write) {
         dostop();
         return false;
     }
-    m_timer = std::make_shared<SrsCcApiImplTimer>(this);
-    m_read_handler = std::make_shared<SrsCcApiImplHandler>(this, true);
-    m_write_cond = srs_cond_new();
-    m_write_handler = std::make_shared<SrsCcApiImplHandler>(this, false);
-    if(!m_timer->start_timer() || !m_read_handler->start_handler() || !m_write_handler->start_handler()) {
-        dostop();
-        return false;
-    }
+    // m_timer = std::make_shared<SrsCcApiImplTimer>(this);
+    // m_read_handler = std::make_shared<SrsCcApiImplHandler>(this, true);
+    // m_write_cond = srs_cond_new();
+    // m_write_handler = std::make_shared<SrsCcApiImplHandler>(this, false);
+    // if(!m_timer->start_timer() || !m_read_handler->start_handler() || !m_write_handler->start_handler()) {
+    //     dostop();
+    //     return false;
+    // }
     srs_trace("Notice srsccapiimpl, worker started with params(ev_fd:(r:%d w:%d)) on status(%s)..",
         evfd_srs_read, evfd_srs_write, status_info().c_str());
     return true;
