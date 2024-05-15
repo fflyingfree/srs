@@ -48,6 +48,7 @@ public:
     enum EM_SRS_CCAPI_MEDIA_MSG_TYPE
     {
         e_srs_ccapi_mediamsg_videoframe = 2001,
+        e_srs_ccapi_mediamsg_audioframe = 2002,
     };
 
 public:
@@ -104,6 +105,30 @@ public:
     uint32_t dts;
     uint32_t cts;
     std::list<std::string> naluStrList;
+};
+
+class SrsCcApiMediaMsgAudioFrame : public SrsCcApiMediaMsgBase
+{
+public:
+    enum __em_aframe_type {
+        _e_aUnknownFrame = 0,
+        _e_aIFrame = 1,
+        _e_aConfigFrame = 4,
+    };
+
+public:
+    SrsCcApiMediaMsgAudioFrame(long msgId, const std::string& streamId) : SrsCcApiMediaMsgBase(msgId, e_srs_ccapi_mediamsg_audioframe, streamId) {
+        aframeType = _e_aUnknownFrame;
+        codecId = -1;
+        dts = 0;
+    }
+    virtual ~SrsCcApiMediaMsgAudioFrame() { }
+
+public:
+    __em_aframe_type aframeType;
+    int codecId;
+    uint32_t dts;
+    std::string dataStr;
 };
 
 };

@@ -57,7 +57,7 @@ void SrsCcApiByPasserMgr::toPassRtmpVideoFrame(const std::string& streamId, SrsS
         vframe->vframeType = SrsCcApiMediaMsgVideoFrame::_e_vIFrame;
     }
     vframe->codecId = srcInfoPtr->_rtmp_format.vcodec->id;
-    vframe->dts = srcInfoPtr->_rtmp_format.video->dts;
+    vframe->dts = srcInfoPtr->_rtmp_format.video->dts * 90;
     vframe->cts = srcInfoPtr->_rtmp_format.video->cts;
     if(is_sequence_header) {
         std::vector<char>& spsNaluBuff = srcInfoPtr->_rtmp_format.vcodec->sequenceParameterSetNALUnit;
@@ -88,9 +88,48 @@ void SrsCcApiByPasserMgr::toPassRtmpVideoFrame(const std::string& streamId, SrsS
 }
 
 void SrsCcApiByPasserMgr::toPassRtmpAudioFrame(const std::string& streamId, SrsSharedPtrMessage* frameMsg) {
+    srs_trace("xxxxxxxxxxxxx toPassRtmpAudioFrame 001 %s", streamId.c_str());
     if(!gSrsCcApiImplWorker.ison() || streamId == "" || frameMsg == nullptr) {
         return;
     }
+    srs_trace("xxxxxxxxxxxxx toPassRtmpAudioFrame 002 %s", streamId.c_str());
+    std::shared_ptr<SrsCcApiInnerStreamSourceInfo> srcInfoPtr = touchStreamSourceInfo(streamId, true);
+    if(!srcInfoPtr) {
+        return;
+    }
+    srs_trace("xxxxxxxxxxxxx toPassRtmpAudioFrame 003 %s", streamId.c_str());
+    if(srcInfoPtr->_rtmp_format.on_audio(frameMsg) != srs_success) {
+        return;
+    }
+    srs_trace("xxxxxxxxxxxxx toPassRtmpAudioFrame 004 %s", streamId.c_str());
+    if(!srcInfoPtr->_rtmp_format.acodec || !srcInfoPtr->_rtmp_format.audio) {
+        return;
+    }
+    bool is_sequence_header = srcInfoPtr->_rtmp_format.is_aac_sequence_header();
+    srs_trace("xxxxxxxxxxxxx toPassRtmpAudioFrame 005 %s", streamId.c_str());
+    long msgId = gSrsCcApiImplWorker.allocMsgId();
+    std::shared_ptr<SrsCcApiMediaMsgAudioFrame> aframe = std::make_shared<SrsCcApiMediaMsgAudioFrame>(msgId, streamId);
+    if(is_sequence_header) {
+        aframe->aframeType = SrsCcApiMediaMsgAudioFrame::_e_aConfigFrame;
+    }else if(srcInfoPtr->_rtmp_format.video->has_idr) {
+        aframe->aframeType = SrsCcApiMediaMsgAudioFrame::_e_aIFrame;
+    }
+    aframe->codecId = srcInfoPtr->_rtmp_format.acodec->id;
+    aframe->dts = srcInfoPtr->_rtmp_format.audio->dts;
+    if(is_sequence_header) {
+        std::vector<char>& audioSpecificConfigDataBuff = srcInfoPtr->_rtmp_format.acodec->aac_extra_data;
+        aframe->dataStr = std::string(audioSpecificConfigDataBuff.begin(), audioSpecificConfigDataBuff.end());
+    }else{
+        if(srcInfoPtr->_rtmp_format.audio->nb_samples == 1) {
+            SrsSample* sample = &(srcInfoPtr->_rtmp_format.audio->samples[0]);
+            aframe->dataStr = std::string(sample->bytes, sample->size);
+        }
+    }
+    srs_trace("xxxxxxxxxxxxx toPassRtmpAudioFrame 006 %s, %ld %ld", streamId.c_str(), srcInfoPtr->_rtmp_format.audio->nb_samples, aframe->dataStr.size());
+    if(aframe->dataStr == "") {
+        return;
+    }
+    gSrsCcApiImplWorker.postMsg(aframe);
 }
 
 std::shared_ptr<SrsCcApiInnerStreamSourceInfo> SrsCcApiByPasserMgr::touchStreamSourceInfo(const std::string& streamId, bool toPass) {
