@@ -111,11 +111,11 @@ void SrsCcApiByPasserMgr::toPassRtmpAudioFrame(const std::string& streamId, SrsS
     std::shared_ptr<SrsCcApiMediaMsgAudioFrame> aframe = std::make_shared<SrsCcApiMediaMsgAudioFrame>(msgId, streamId);
     if(is_sequence_header) {
         aframe->aframeType = SrsCcApiMediaMsgAudioFrame::_e_aConfigFrame;
-    }else if(srcInfoPtr->_rtmp_format.video->has_idr) {
+    }else{
         aframe->aframeType = SrsCcApiMediaMsgAudioFrame::_e_aIFrame;
     }
     aframe->codecId = srcInfoPtr->_rtmp_format.acodec->id;
-    aframe->dts = srcInfoPtr->_rtmp_format.audio->dts;
+    aframe->dts = srcInfoPtr->_rtmp_format.audio->dts * 90;
     if(is_sequence_header) {
         std::vector<char>& audioSpecificConfigDataBuff = srcInfoPtr->_rtmp_format.acodec->aac_extra_data;
         aframe->dataStr = std::string(audioSpecificConfigDataBuff.begin(), audioSpecificConfigDataBuff.end());
