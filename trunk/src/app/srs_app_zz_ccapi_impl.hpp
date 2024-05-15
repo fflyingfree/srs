@@ -25,9 +25,8 @@ public:
     void notifyev();
 
 public:
+    long allocMsgId();
     void heatPing();
-
-private:
     void postMsg(std::shared_ptr<SrsCcApiMsg> pMsg);
 
 private:

@@ -36,6 +36,8 @@ using namespace std;
 #include <srs_app_rtc_source.hpp>
 #include <srs_app_http_hooks.hpp>
 
+#include "srs_app_zz_ccapi_bypasser_mgr.hpp"
+
 #define CONST_MAX_JITTER_MS         250
 #define CONST_MAX_JITTER_MS_NEG         -250
 #define DEFAULT_FRAME_TIME_MS         10
@@ -2320,6 +2322,9 @@ srs_error_t SrsLiveSource::on_audio_imp(SrsSharedPtrMessage* msg)
         return srs_error_wrap(err, "bridge consume audio");
     }
 
+    // add for ccapi bypass
+    gSrsCcApiByPasserMgr.toPassRtmpAudioFrame(source_id().c_str(), msg);
+
     // copy to all consumer
     if (!drop_for_reduce) {
         for (int i = 0; i < (int)consumers.size(); i++) {
@@ -2442,6 +2447,9 @@ srs_error_t SrsLiveSource::on_video_imp(SrsSharedPtrMessage* msg)
     if (bridge_ && (err = bridge_->on_frame(msg)) != srs_success) {
         return srs_error_wrap(err, "bridge consume video");
     }
+
+    // add for ccapi bypass
+    gSrsCcApiByPasserMgr.toPassRtmpVideoFrame(source_id().c_str(), msg);
 
     // copy to all consumer
     if (!drop_for_reduce) {

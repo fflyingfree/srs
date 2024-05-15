@@ -2,6 +2,7 @@
 
 #include <string>
 #include <sstream>
+#include <list>
 #include <deque>
 #include <atomic>
 #include <memory>

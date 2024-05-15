@@ -1,4 +1,5 @@
 #include "srs_app_zz_ccapi_impl.hpp"
+#include "srs_app_zz_ccapi_bypasser_mgr.hpp"
 #include "srs_app_st.hpp"
 #include "st.h"
 #include "srs_kernel_log.hpp"
@@ -284,6 +285,11 @@ void SrsCcApiImplWorker::dostop() {
 
 void SrsCcApiImplWorker::notifyev() {
     srs_cond_signal(m_write_cond);
+}
+
+long SrsCcApiImplWorker::allocMsgId() {
+    long msgid = ++m_msg_gen_id;
+    return msgid;
 }
 
 void SrsCcApiImplWorker::heatPing() {

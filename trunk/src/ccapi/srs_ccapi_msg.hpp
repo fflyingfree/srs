@@ -80,12 +80,30 @@ public:
 class SrsCcApiMediaMsgVideoFrame : public SrsCcApiMediaMsgBase
 {
 public:
+    enum __em_vframe_type {
+        _e_vUnknownFrame = 0,
+        _e_vIFrame = 1,
+        _e_vPFrame = 2,
+        _e_vBFrame = 3,
+        _e_vConfigFrame = 4,
+        _e_vPBFrame = 5,
+    };
+
+public:
     SrsCcApiMediaMsgVideoFrame(long msgId, const std::string& streamId) : SrsCcApiMediaMsgBase(msgId, e_srs_ccapi_mediamsg_videoframe, streamId) {
+        vframeType = _e_vUnknownFrame;
+        codecId = -1;
+        dts = 0;
+        cts = 0;
     }
     virtual ~SrsCcApiMediaMsgVideoFrame() { }
 
 public:
-    //todo
+    __em_vframe_type vframeType;
+    int codecId;
+    uint32_t dts;
+    uint32_t cts;
+    std::list<std::string> naluStrList;
 };
 
 };
