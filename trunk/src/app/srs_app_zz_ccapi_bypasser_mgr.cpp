@@ -60,10 +60,14 @@ void SrsCcApiByPasserMgr::toPassRtmpVideoFrame(const std::string& streamId, SrsS
     vframe->dts = srcInfoPtr->_rtmp_format.video->dts * 90;
     vframe->cts = srcInfoPtr->_rtmp_format.video->cts;
     if(is_sequence_header) {
-        std::vector<char>& spsNaluBuff = srcInfoPtr->_rtmp_format.vcodec->sequenceParameterSetNALUnit;
-        std::vector<char>& ppsNaluBuff = srcInfoPtr->_rtmp_format.vcodec->pictureParameterSetNALUnit;
-        vframe->naluStrList.push_back(std::string(spsNaluBuff.begin(), spsNaluBuff.end()));
-        vframe->naluStrList.push_back(std::string(ppsNaluBuff.begin(), ppsNaluBuff.end()));
+        // std::vector<char>& spsNaluBuff = srcInfoPtr->_rtmp_format.vcodec->sequenceParameterSetNALUnit;
+        // std::vector<char>& ppsNaluBuff = srcInfoPtr->_rtmp_format.vcodec->pictureParameterSetNALUnit;
+        // vframe->naluStrList.push_back(std::string(spsNaluBuff.begin(), spsNaluBuff.end()));
+        // vframe->naluStrList.push_back(std::string(ppsNaluBuff.begin(), ppsNaluBuff.end()));
+        for(int i = 0; i < srcInfoPtr->_rtmp_format.video->nb_samples; ++i) {
+            SrsSample* sample = &(srcInfoPtr->_rtmp_format.video->samples[i]);
+            vframe->naluStrList.push_back(std::string(sample->bytes, sample->size));
+        }
     }else{
         for(int i = 0; i < srcInfoPtr->_rtmp_format.video->nb_samples; ++i) {
             SrsSample* sample = &(srcInfoPtr->_rtmp_format.video->samples[i]);
