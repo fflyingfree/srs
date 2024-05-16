@@ -128,7 +128,8 @@ public:
     __em_aframe_type aframeType;
     int codecId;
     uint32_t dts;
-    std::string dataStr;
+    std::string rawStr;
+    std::map<std::string, std::string> extraMap;
 };
 
 };

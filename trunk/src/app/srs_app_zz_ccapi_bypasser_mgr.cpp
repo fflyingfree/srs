@@ -118,15 +118,16 @@ void SrsCcApiByPasserMgr::toPassRtmpAudioFrame(const std::string& streamId, SrsS
     aframe->dts = srcInfoPtr->_rtmp_format.audio->dts * 90;
     if(is_sequence_header) {
         std::vector<char>& audioSpecificConfigDataBuff = srcInfoPtr->_rtmp_format.acodec->aac_extra_data;
-        aframe->dataStr = std::string(audioSpecificConfigDataBuff.begin(), audioSpecificConfigDataBuff.end());
+        aframe->rawStr = std::string(audioSpecificConfigDataBuff.begin(), audioSpecificConfigDataBuff.end());
     }else{
         if(srcInfoPtr->_rtmp_format.audio->nb_samples == 1) {
             SrsSample* sample = &(srcInfoPtr->_rtmp_format.audio->samples[0]);
-            aframe->dataStr = std::string(sample->bytes, sample->size);
+            aframe->rawStr = std::string(sample->bytes, sample->size);
         }
     }
-    srs_trace("xxxxxxxxxxxxx toPassRtmpAudioFrame 006 %s, %ld %ld", streamId.c_str(), srcInfoPtr->_rtmp_format.audio->nb_samples, aframe->dataStr.size());
-    if(aframe->dataStr == "") {
+    aframe->extraMap["sampleBitFlag"] = std::to_string((int)srcInfoPtr->_rtmp_format.acodec->sound_size);
+    srs_trace("xxxxxxxxxxxxx toPassRtmpAudioFrame 006 %s, %ld %ld", streamId.c_str(), srcInfoPtr->_rtmp_format.audio->nb_samples, aframe->rawStr.size());
+    if(aframe->rawStr == "") {
         return;
     }
     gSrsCcApiImplWorker.postMsg(aframe);

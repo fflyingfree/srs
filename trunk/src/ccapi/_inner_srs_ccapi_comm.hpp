@@ -4,6 +4,7 @@
 #include <sstream>
 #include <vector>
 #include <list>
+#include <map>
 #include <deque>
 #include <atomic>
 #include <memory>
