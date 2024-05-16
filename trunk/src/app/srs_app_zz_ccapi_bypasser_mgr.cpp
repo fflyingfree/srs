@@ -60,13 +60,19 @@ void SrsCcApiByPasserMgr::toPassRtmpVideoFrame(const std::string& streamId, SrsS
     vframe->dts = srcInfoPtr->_rtmp_format.video->dts * 90;
     vframe->cts = srcInfoPtr->_rtmp_format.video->cts;
     if(is_sequence_header) {
-        // std::vector<char>& spsNaluBuff = srcInfoPtr->_rtmp_format.vcodec->sequenceParameterSetNALUnit;
-        // std::vector<char>& ppsNaluBuff = srcInfoPtr->_rtmp_format.vcodec->pictureParameterSetNALUnit;
-        // vframe->naluStrList.push_back(std::string(spsNaluBuff.begin(), spsNaluBuff.end()));
-        // vframe->naluStrList.push_back(std::string(ppsNaluBuff.begin(), ppsNaluBuff.end()));
-        for(int i = 0; i < srcInfoPtr->_rtmp_format.video->nb_samples; ++i) {
-            SrsSample* sample = &(srcInfoPtr->_rtmp_format.video->samples[i]);
-            vframe->naluStrList.push_back(std::string(sample->bytes, sample->size));
+        if(vframe->codecId == 7) { //h264
+            std::vector<char>& spsNaluBuff = srcInfoPtr->_rtmp_format.vcodec->sequenceParameterSetNALUnit;
+            std::vector<char>& ppsNaluBuff = srcInfoPtr->_rtmp_format.vcodec->pictureParameterSetNALUnit;
+            vframe->naluStrList.push_back(std::string(spsNaluBuff.begin(), spsNaluBuff.end()));
+            vframe->naluStrList.push_back(std::string(ppsNaluBuff.begin(), ppsNaluBuff.end()));
+        }else if(vframe->codecId == 12) { //h265
+            for(size_t i = 0; i < srcInfoPtr->_rtmp_format.vcodec->hevc_dec_conf_record_.nalu_vec.size(); ++i) {                
+                SrsHevcHvccNalu& hecv_hvcc_nalu = srcInfoPtr->_rtmp_format.vcodec->hevc_dec_conf_record_.nalu_vec[i];
+                for(size_t j = 0; j < hecv_hvcc_nalu.nal_data_vec.size(); ++j) {
+                    SrsHevcNalData& hevcNaluData = hecv_hvcc_nalu.nal_data_vec[j];
+                    vframe->naluStrList.push_back(std::string(hevcNaluData.nal_unit_data.begin(), hevcNaluData.nal_unit_data.end()));
+                }
+            }
         }
     }else{
         for(int i = 0; i < srcInfoPtr->_rtmp_format.video->nb_samples; ++i) {
