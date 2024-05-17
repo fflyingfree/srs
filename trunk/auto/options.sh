@@ -65,7 +65,7 @@ SRS_APM=NO
 # whether enable the log verbose/info/trace level.
 # always enable the warn/error level.
 SRS_LOG_VERBOSE=NO
-SRS_LOG_INFO=NO
+SRS_LOG_INFO=YES
 SRS_LOG_TRACE=YES
 # Whether use new level definition, see https://stackoverflow.com/a/2031209/17679565
 SRS_LOG_LEVEL_V2=YES
