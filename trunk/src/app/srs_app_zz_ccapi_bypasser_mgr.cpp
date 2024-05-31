@@ -57,7 +57,7 @@ void SrsCcApiByPasserMgr::toPassRtmpVideoFrame(const std::string& streamId, SrsS
         vframe->vframeType = SrsCcApiMediaMsgVideoFrame::_e_vIFrame;
     }
     vframe->codecId = srcInfoPtr->_rtmp_format.vcodec->id;
-    vframe->dts = srcInfoPtr->_rtmp_format.video->dts * 90;
+    vframe->dts = srcInfoPtr->_rtmp_format.video->dts;
     vframe->cts = srcInfoPtr->_rtmp_format.video->cts;
     if(is_sequence_header) {
         if(vframe->codecId == 7) { //h264
@@ -125,7 +125,7 @@ void SrsCcApiByPasserMgr::toPassRtmpAudioFrame(const std::string& streamId, SrsS
         aframe->aframeType = SrsCcApiMediaMsgAudioFrame::_e_aIFrame;
     }
     aframe->codecId = srcInfoPtr->_rtmp_format.acodec->id;
-    aframe->dts = srcInfoPtr->_rtmp_format.audio->dts * 90;
+    aframe->dts = srcInfoPtr->_rtmp_format.audio->dts;
     if(is_sequence_header) {
         std::vector<char>& audioSpecificConfigDataBuff = srcInfoPtr->_rtmp_format.acodec->aac_extra_data;
         aframe->rawStr = std::string(audioSpecificConfigDataBuff.begin(), audioSpecificConfigDataBuff.end());
