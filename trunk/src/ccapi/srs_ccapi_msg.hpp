@@ -22,6 +22,7 @@ public:
 public:
     long _msg_id;
     int _msg_type; //notify_msg_type media_msg_type
+    /* /app/stream | vhost/app/stream */
     std::string _stream_id;
 };
 

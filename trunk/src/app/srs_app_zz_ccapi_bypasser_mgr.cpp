@@ -2,6 +2,9 @@
 #include "srs_app_zz_ccapi_impl.hpp"
 #include "srs_kernel_codec.hpp"
 #include "srs_protocol_format.hpp"
+#include "srs_protocol_rtmp_stack.hpp"
+#include "srs_protocol_raw_avc.hpp"
+#include "srs_kernel_buffer.hpp"
 #include "srs_kernel_log.hpp"
 
 class SrsCcApiInnerStreamSourceInfo
@@ -16,8 +19,45 @@ public:
     }
 
 private:
+    //for toPass mode
     SrsRtmpFormat _rtmp_format;
+
+private:
+    //for onPass mode
+    std::map<std::string, uint8_t> _audioFormatConfig;
 };
+
+static SrsRequest genSrsRequestByStreamId(const std::string& stream_id) {
+    SrsRequest srsReq;
+    srsReq.vhost = SRS_CONSTS_RTMP_DEFAULT_VHOST;
+    srsReq.app = "";
+    srsReq.stream = "";
+    size_t posL = 0;
+    //vhost
+    size_t posR = stream_id.find("/", posL);
+    if(posR == std::string::npos) {
+        return srsReq;
+    }
+    if(posR > posL) {
+        srsReq.vhost = stream_id.substr(posL, posR-posL);
+    }
+    posL = posR+1;
+    //app
+    posR = stream_id.find("/", posL);
+    if(posR == std::string::npos) {
+        return srsReq;
+    }
+    if(posR > posL) {
+        srsReq.app = stream_id.substr(posL, posR-posL);
+    }
+    posL = posR+1;
+    //stream
+    posR = stream_id.size();
+    if(posR > posL) {
+        srsReq.stream = stream_id.substr(posL, posR-posL);
+    }
+    return srsReq;
+}
 
 SrsCcApiByPasserMgr gSrsCcApiByPasserMgr;
 
@@ -143,10 +183,187 @@ void SrsCcApiByPasserMgr::toPassRtmpAudioFrame(const std::string& streamId, SrsS
     gSrsCcApiImplWorker.postMsg(aframe);
 }
 
-std::shared_ptr<SrsCcApiInnerStreamSourceInfo> SrsCcApiByPasserMgr::touchStreamSourceInfo(const std::string& streamId, bool toPass) {
-    std::shared_ptr<SrsCcApiInnerStreamSourceInfo>& srcInfoPtr = mStreamSourceMapToPass[streamId];
-    if(!srcInfoPtr) {
-        srcInfoPtr = std::make_shared<SrsCcApiInnerStreamSourceInfo>();
+void SrsCcApiByPasserMgr::onPassVideoFrame(SrsCcApiMediaMsgVideoFrame* videoFrame) {
+    if(!gSrsCcApiImplWorker.ison() || videoFrame == nullptr || videoFrame->_stream_id == "") {
+        return;
     }
-    return srcInfoPtr;
+    std::shared_ptr<SrsCcApiInnerStreamSourceInfo> srcInfoPtr = touchStreamSourceInfo(videoFrame->_stream_id, false);
+    if(!srcInfoPtr) {
+        return;
+    }
+    SrsRequest req = genSrsRequestByStreamId(videoFrame->_stream_id);
+    SrsLiveSource* liveSource = _srs_sources->fetch(&req);
+    if(liveSource == nullptr) {
+        _srs_sources->fetch_or_create(&req, this,  &liveSource);
+    }
+    if(liveSource == nullptr) {
+        return;
+    }
+    SrsCommonMessage frameMsg;
+    std::string _videoSequenceHeaderStr = "";
+    uint32_t payloadLen = 0;
+    if(videoFrame->vframeType == SrsCcApiMediaMsgVideoFrame::__em_vframe_type::_e_vConfigFrame) {
+        std::string sh = "";
+        if(videoFrame->codecId == 7) {
+            SrsRawH264Stream avc;
+            std::string sps = "";
+            std::string pps = "";
+            for(auto& lit : videoFrame->naluStrList) {
+                if(lit.size() == 0) {
+                    continue;
+                }
+                if(sps == "" && avc.is_sps((char*)lit.data(), lit.size())) {
+                    sps = lit;
+                }
+                if(pps == "" && avc.is_pps((char*)lit.data(), lit.size())) {
+                    pps = lit;
+                }
+                if(sps != "" && pps != "") {
+                    break;
+                }
+            }
+            avc.mux_sequence_header(sps, pps, sh);
+        }else if(videoFrame->codecId == 12) {
+            SrsRawHEVCStream hevc;
+            std::string sps = "";
+            std::string pps = "";
+            std::vector<std::string> vps;
+            for(auto& lit : videoFrame->naluStrList) {
+                if(lit.size() == 0) {
+                    continue;
+                }
+                if(sps == "" && hevc.is_sps((char*)lit.data(), lit.size())) {
+                    sps = lit;
+                }
+                if(pps == "" && hevc.is_pps((char*)lit.data(), lit.size())) {
+                    pps = lit;
+                }
+                if(hevc.is_vps((char*)lit.data(), lit.size())) {
+                    vps.push_back(lit);
+                }
+            }
+            hevc.mux_sequence_header(sps, pps, vps, sh);
+        }
+        if(sh != "") {
+            std::swap(_videoSequenceHeaderStr, sh);
+        }
+        payloadLen = 5 + _videoSequenceHeaderStr.size();
+    }else{
+        payloadLen = 5;
+        for(auto& lit : videoFrame->naluStrList) {
+            payloadLen += 4;
+            payloadLen += lit.size();
+        }
+    }
+    frameMsg.header.initialize_video(payloadLen, videoFrame->dts, 1);
+    frameMsg.create_payload(payloadLen);
+    frameMsg.size = payloadLen;
+    SrsBuffer payload(frameMsg.payload, frameMsg.size);
+    uint8_t video_format = 0;
+    if(videoFrame->vframeType == SrsCcApiMediaMsgVideoFrame::__em_vframe_type::_e_vConfigFrame || videoFrame->vframeType == SrsCcApiMediaMsgVideoFrame::__em_vframe_type::_e_vIFrame) {
+        video_format |= 0x10;;
+    }else{
+        video_format |= 0x20;
+    }
+    video_format |= (((uint8_t)videoFrame->codecId) & 0x0f);
+    payload.write_1bytes(video_format);
+    if(videoFrame->vframeType == SrsCcApiMediaMsgVideoFrame::__em_vframe_type::_e_vConfigFrame) {
+        payload.write_1bytes(0);
+    }else{
+        payload.write_1bytes(1);
+    }
+    payload.write_1bytes((uint8_t)(videoFrame->cts >> 2));
+    payload.write_1bytes((uint8_t)(videoFrame->cts >> 1));
+    payload.write_1bytes((uint8_t)(videoFrame->cts));
+    if(videoFrame->vframeType == SrsCcApiMediaMsgVideoFrame::__em_vframe_type::_e_vConfigFrame) {
+        if(_videoSequenceHeaderStr.size() > 0) {
+            payload.write_bytes((char*)_videoSequenceHeaderStr.data(), _videoSequenceHeaderStr.size());
+        }
+    }else{
+        for(auto& lit : videoFrame->naluStrList) {
+            payload.write_4bytes(lit.size());
+            if(lit.size() > 0) {
+                payload.write_bytes((char*)lit.data(), lit.size());
+            }
+        }
+    }
+    liveSource->on_video(&frameMsg);
+}
+
+void SrsCcApiByPasserMgr::onPassAudioFrame(SrsCcApiMediaMsgAudioFrame* audioFrame) {
+    if(!gSrsCcApiImplWorker.ison() || audioFrame == nullptr || audioFrame->_stream_id == "") {
+        return;
+    }
+    std::shared_ptr<SrsCcApiInnerStreamSourceInfo> srcInfoPtr = touchStreamSourceInfo(audioFrame->_stream_id, false);
+    if(!srcInfoPtr) {
+        return;
+    }
+    SrsRequest req = genSrsRequestByStreamId(audioFrame->_stream_id);
+    SrsLiveSource* liveSource = _srs_sources->fetch(&req);
+    if(liveSource == nullptr) {
+        _srs_sources->fetch_or_create(&req, this, &liveSource);
+    }
+    if(liveSource == nullptr) {
+        return;
+    }
+    SrsCommonMessage frameMsg;
+    uint32_t payloadLen = 2 + audioFrame->rawStr.size();
+    if(audioFrame->aframeType == SrsCcApiMediaMsgAudioFrame::__em_aframe_type::_e_aConfigFrame) {
+        if(audioFrame->codecId == 10) {
+            SrsFormat aacFmt;
+            aacFmt.initialize();
+            if(srs_success == aacFmt.on_aac_sequence_header((char*)audioFrame->rawStr.data(), audioFrame->rawStr.size())) {
+                srcInfoPtr->_audioFormatConfig["soundRateIndex"] = aacFmt.acodec->aac_sample_rate;
+                srcInfoPtr->_audioFormatConfig["soundChannelFlag"] = aacFmt.acodec->aac_channels;
+                srcInfoPtr->_audioFormatConfig["soundBitFlag"] = (uint8_t)atoi(audioFrame->extraMap["sampleBitFlag"].c_str());
+            }
+        }
+    }
+    frameMsg.header.initialize_audio(payloadLen, audioFrame->dts, 1);
+    frameMsg.create_payload(payloadLen);
+    SrsBuffer stream(frameMsg.payload, payloadLen);
+    uint8_t audio_format = 0;
+    audio_format |= ((((uint8_t)audioFrame->codecId) & 0x0f) << 4);
+    audio_format |= ((((uint8_t)srcInfoPtr->_audioFormatConfig["soundRateIndex"]) & 0x03) << 2);
+    audio_format |= ((((uint8_t)srcInfoPtr->_audioFormatConfig["soundBitFlag"]) & 0x01) << 1);
+    audio_format |= ((((uint8_t)srcInfoPtr->_audioFormatConfig["soundChannelFlag"]) & 0x01));
+    stream.write_1bytes(audio_format);
+    if(audioFrame->aframeType == SrsCcApiMediaMsgAudioFrame::__em_aframe_type::_e_aConfigFrame) {
+        stream.write_1bytes(0);
+    }else{
+        stream.write_1bytes(1);
+    }
+    stream.write_bytes((char*)audioFrame->rawStr.data(), audioFrame->rawStr.size());
+    frameMsg.size = payloadLen;
+    liveSource->on_audio(&frameMsg);
+}
+
+srs_error_t SrsCcApiByPasserMgr::on_publish(SrsLiveSource* s, SrsRequest* r) {
+    srs_error_t err = srs_success;
+    if(s != nullptr && r != nullptr) {
+        srs_info("SrsCcApiByPasserMgr::on_publish, streamid:%s", r->get_stream_url().c_str());
+    }
+    return err;
+}
+
+void SrsCcApiByPasserMgr::on_unpublish(SrsLiveSource* s, SrsRequest* r) {
+    if(s != nullptr && r != nullptr) {
+        srs_info("SrsCcApiByPasserMgr::on_unpublish, streamid:%s", r->get_stream_url().c_str());
+    }
+}
+
+std::shared_ptr<SrsCcApiInnerStreamSourceInfo> SrsCcApiByPasserMgr::touchStreamSourceInfo(const std::string& streamId, bool toPass) {
+    if(toPass) {
+        std::shared_ptr<SrsCcApiInnerStreamSourceInfo>& srcInfoPtr = mStreamSourceMapToPass[streamId];
+        if(!srcInfoPtr) {
+            srcInfoPtr = std::make_shared<SrsCcApiInnerStreamSourceInfo>();
+        }
+        return srcInfoPtr;
+    }else{
+        std::shared_ptr<SrsCcApiInnerStreamSourceInfo>& srcInfoPtr = mStreamSourceMapOnPass[streamId];
+        if(!srcInfoPtr) {
+            srcInfoPtr = std::make_shared<SrsCcApiInnerStreamSourceInfo>();
+        }
+        return srcInfoPtr;
+    }
 }

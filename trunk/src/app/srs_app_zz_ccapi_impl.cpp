@@ -201,6 +201,23 @@ private:
             }
             //
             case SrsCcApiMediaMsgBase::e_srs_ccapi_mediamsg_videoframe: {
+                SrsCcApiMediaMsgVideoFrame* videoFrame = SrsCcApiMsg::fetchSpecificMsg<SrsCcApiMediaMsgVideoFrame>(pmsg.get());
+                if(videoFrame) {
+                    srs_trace("Debug srsccapiimpl, handler cid(%s), recvd videoframe, (_msg_id:%ld _msg_type:%d _stream_id:%s, vframeType:%d codecId:%d dts:%u cts:%u naluStrList.siz:%lu)",
+                        m_cid.c_str(), pmsg->_msg_id, pmsg->_msg_type, pmsg->_stream_id.c_str(),
+                        videoFrame->vframeType, videoFrame->codecId, videoFrame->dts, videoFrame->cts, videoFrame->naluStrList.size());
+                }
+                gSrsCcApiByPasserMgr.onPassVideoFrame(videoFrame);
+                break;
+            }
+            case SrsCcApiMediaMsgBase::e_srs_ccapi_mediamsg_audioframe: {
+                SrsCcApiMediaMsgAudioFrame* audioFrame = SrsCcApiMsg::fetchSpecificMsg<SrsCcApiMediaMsgAudioFrame>(pmsg.get());
+                if(audioFrame) {
+                    srs_trace("Debug srsccapiimpl, handler cid(%s), recvd audioframe, (_msg_id:%ld _msg_type:%d _stream_id:%s, aframeType:%d codecId:%d dts:%u rawStr.siz:%lu extraMap.siz:%lu)",
+                        m_cid.c_str(), pmsg->_msg_id, pmsg->_msg_type, pmsg->_stream_id.c_str(),
+                        audioFrame->aframeType, audioFrame->codecId, audioFrame->dts, audioFrame->rawStr.size(), audioFrame->extraMap.size());
+                }
+                gSrsCcApiByPasserMgr.onPassAudioFrame(audioFrame);
                 break;
             }
             default: {
