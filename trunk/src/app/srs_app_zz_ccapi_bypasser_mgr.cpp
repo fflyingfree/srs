@@ -196,6 +196,9 @@ void SrsCcApiByPasserMgr::onPassVideoFrame(SrsCcApiMediaMsgVideoFrame* videoFram
     SrsLiveSource* liveSource = _srs_sources->fetch(&req);
     if(liveSource == nullptr) {
         _srs_sources->fetch_or_create(&req, this,  &liveSource);
+        if(liveSource) {
+            liveSource->on_publish();
+        }
     }
     if(liveSource == nullptr) {
         return;
@@ -303,6 +306,9 @@ void SrsCcApiByPasserMgr::onPassAudioFrame(SrsCcApiMediaMsgAudioFrame* audioFram
     SrsLiveSource* liveSource = _srs_sources->fetch(&req);
     if(liveSource == nullptr) {
         _srs_sources->fetch_or_create(&req, this, &liveSource);
+        if(liveSource) {
+            liveSource->on_publish();
+        }
     }
     if(liveSource == nullptr) {
         return;
