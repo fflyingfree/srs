@@ -325,9 +325,31 @@ void SrsCcApiByPasserMgr::onPassAudioFrame(SrsCcApiMediaMsgAudioFrame* audioFram
     SrsBuffer stream(frameMsg.payload, payloadLen);
     uint8_t audio_format = 0;
     audio_format |= ((((uint8_t)audioFrame->codecId) & 0x0f) << 4);
-    audio_format |= ((((uint8_t)srcInfoPtr->_audioFormatConfig["soundRateIndex"]) & 0x03) << 2);
-    audio_format |= ((((uint8_t)srcInfoPtr->_audioFormatConfig["soundBitFlag"]) & 0x01) << 1);
-    audio_format |= ((((uint8_t)srcInfoPtr->_audioFormatConfig["soundChannelFlag"]) & 0x01));
+    int s_frequency[] = { 96000, 88200, 64000, 48000, 44100, 32000, 24000, 22050, 16000, 12000, 11025, 8000, 7350 };
+    int s_index = srcInfoPtr->_audioFormatConfig["soundRateIndex"];
+    if(s_index >= 0 && s_index < 13) {
+        if(s_frequency[s_index] >= 44100) {
+            audio_format |= ((((uint8_t)(3)) & 0x03) << 2);
+        }else if(s_frequency[s_index] >= 22050) {
+            audio_format |= ((((uint8_t)(2)) & 0x03) << 2);
+        }else if(s_frequency[s_index] >= 11025) {
+            audio_format |= ((((uint8_t)(1)) & 0x03) << 2);
+        }else{
+            audio_format |= ((((uint8_t)(0)) & 0x03) << 2);
+        }
+    }else{
+        audio_format |= ((((uint8_t)(3)) & 0x03) << 2);
+    }
+    if(srcInfoPtr->_audioFormatConfig["soundBitFlag"] > 0) {
+        audio_format |= ((((uint8_t)(1)) & 0x01) << 1);
+    }else{
+        audio_format |= ((((uint8_t)(0)) & 0x01) << 1);
+    }
+    if(srcInfoPtr->_audioFormatConfig["soundChannelFlag"] > 1) {
+        audio_format |= (((uint8_t)(1)) & 0x01);
+    }else{
+        audio_format |= (((uint8_t)(0)) & 0x01);
+    }
     stream.write_1bytes(audio_format);
     if(audioFrame->aframeType == SrsCcApiMediaMsgAudioFrame::__em_aframe_type::_e_aConfigFrame) {
         stream.write_1bytes(0);
