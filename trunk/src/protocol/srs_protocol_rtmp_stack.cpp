@@ -1497,6 +1497,20 @@ SrsRequest* SrsRequest::copy()
 
 void SrsRequest::update_auth(SrsRequest* req)
 {
+    std::string reFlagZzCcapiOnPass = "";
+    if(req->param.find("zz_ccapi_onpass=") == std::string::npos) {
+        size_t pos = param.find("zz_ccapi_onpass=");
+        if(pos != std::string::npos) {
+            size_t pos2 = param.find("&", pos);
+            if(pos2 == std::string::npos) {
+                pos2 = param.size();
+            }
+            if(pos2 > pos) {
+                reFlagZzCcapiOnPass = param.substr(pos, pos2-pos);
+            }
+        }
+    }
+
     pageUrl = req->pageUrl;
     swfUrl = req->swfUrl;
     tcUrl = req->tcUrl;
@@ -1511,6 +1525,20 @@ void SrsRequest::update_auth(SrsRequest* req)
     param = req->param;
     schema = req->schema;
     duration = req->duration;
+
+    if(reFlagZzCcapiOnPass != "") {
+        if(param == "") {
+            param = reFlagZzCcapiOnPass;
+        }else{
+            if(param.at(0) == '?') {
+                param += "&";
+                param += reFlagZzCcapiOnPass;
+            }else{
+                param = reFlagZzCcapiOnPass + "&" + param;
+            }
+        }
+        srs_info("update_auth reFlagZzCcapiOnPass, app:%s stream:%s param:%s", app.c_str(), stream.c_str(), param.c_str());
+    }
     
     if (args) {
         srs_freep(args);
