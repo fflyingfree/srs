@@ -29,6 +29,7 @@ private:
 
 static SrsRequest genSrsRequestByStreamId(const std::string& stream_id) {
     SrsRequest srsReq;
+    srsReq.param = "zz_ccapi_onpass=1";
     srsReq.vhost = SRS_CONSTS_RTMP_DEFAULT_VHOST;
     srsReq.app = "";
     srsReq.stream = "";

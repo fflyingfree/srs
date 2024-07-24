@@ -2323,7 +2323,9 @@ srs_error_t SrsLiveSource::on_audio_imp(SrsSharedPtrMessage* msg)
     }
 
     // add for ccapi bypass
-    gSrsCcApiByPasserMgr.toPassRtmpAudioFrame(req->get_stream_url(), msg);
+    if(req->param.find("zz_ccapi_onpass=1") == std::string::npos) {
+        gSrsCcApiByPasserMgr.toPassRtmpAudioFrame(req->get_stream_url(), msg);
+    }
 
     // copy to all consumer
     if (!drop_for_reduce) {
@@ -2449,7 +2451,9 @@ srs_error_t SrsLiveSource::on_video_imp(SrsSharedPtrMessage* msg)
     }
 
     // add for ccapi bypass
-    gSrsCcApiByPasserMgr.toPassRtmpVideoFrame(req->get_stream_url(), msg);
+    if(req->param.find("zz_ccapi_onpass=1") == std::string::npos) {
+        gSrsCcApiByPasserMgr.toPassRtmpVideoFrame(req->get_stream_url(), msg);
+    }
 
     // copy to all consumer
     if (!drop_for_reduce) {
